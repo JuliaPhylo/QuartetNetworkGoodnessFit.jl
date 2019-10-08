@@ -1,6 +1,6 @@
 @doc raw"""
-    quarnetGoFtest!(net::HybridNetwork, df::DataFrame, optbl::Bool; quartetstat])
-    quarnetGoFtest!(net::HybridNetwork, dcf::DataCF,   optbl::Bool; quartetstat])
+    quarnetGoFtest!(net::HybridNetwork, df::DataFrame, optbl::Bool; quartetstat=:LRT)
+    quarnetGoFtest!(net::HybridNetwork, dcf::DataCF,   optbl::Bool; quartetstat=:LRT)
     quarnetGoFtest(dcf::DataCF, quartetstat::Symbol)
 
 Goodness-of-fit test for the adequacy of the multispecies network coalescent,
@@ -159,7 +159,7 @@ function multinom_qlog(quartet::Vector{Quartet})
         ngenes = qt.ngenes
         mysum = 0.0
         for j in 1:3
-            if phat[j] > eps(Float64)
+            if phat[j] > eps(Float64) && !isapprox(phat[j],p[j]; atol=1e-20)
                 mysum += (phat[j]-p[j])^2/(p[j]*(log(phat[j])-log(p[j])))
             end
         end
