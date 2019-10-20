@@ -23,7 +23,7 @@ const depsjl_path = joinpath(@__DIR__, "..", "deps", "deps.jl")
 if !isfile(depsjl_path)
     warnmsg = """
     QuartetNetworkGoodnessFit not installed properly.
-    run Pkg.build(\"QuartetNetworkGoodnessFit\"), restart Julia and try again.
+    run using Pkg; Pkg.build(\"QuartetNetworkGoodnessFit\"), restart Julia and try again.
     If the error persists, install the Hybrid-Lambda dependency manually.
     """
     @warn warnmsg
