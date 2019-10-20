@@ -4,6 +4,7 @@ using CategoricalArrays: cut
 using DataFrames
 using NLopt
 using PhyloNetworks
+using SharedArrays
 using SpecialFunctions: loggamma
 using Statistics: mean
 using StatsFuns: normccdf, chisqccdf, betacdf, betaccdf

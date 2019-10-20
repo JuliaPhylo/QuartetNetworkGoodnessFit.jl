@@ -1,7 +1,7 @@
 @doc raw"""
-    quarnetGoFtest!(net::HybridNetwork, df::DataFrame, optbl::Bool; quartetstat=:LRT)
-    quarnetGoFtest!(net::HybridNetwork, dcf::DataCF,   optbl::Bool; quartetstat=:LRT)
-    quarnetGoFtest(dcf::DataCF, quartetstat::Symbol)
+    quarnetGoFtest!(net::HybridNetwork, df::DataFrame, optbl::Bool; quartetstat=:LRT, correction=:simulation)
+    quarnetGoFtest!(net::HybridNetwork, dcf::DataCF,   optbl::Bool; quartetstat=:LRT, correction=:simulation)
+    quarnetGoFtest(dcf::DataCF, quartetstat::Symbol, correction::Symbol)
 
 Goodness-of-fit test for the adequacy of the multispecies network coalescent,
 to see if a given population or species network explains the
@@ -21,6 +21,7 @@ outlier p-values: `0-0.01`, `0.01-0.05`, `0.05-0.10`, and `0.10-1`.
 Finally, a one-sided goodness-of-fit test is performed on these
 binned frequencies to determine if they depart from an
 expected 5% p-values being below 0.05 (versus more than 5%).
+fixit: explain the correction, options `:none`, simulation sample size, etc.
 
 - The first version takes a `DataFrame` where each row corresponds to a given
   four-taxon set. The data frame is modified by having an additional another column
@@ -48,14 +49,16 @@ expected 5% p-values being below 0.05 (versus more than 5%).
   and `:pearson` for Pearon's chi-squared statistic, which behaves poorly when
   the expected count is low (e.g. less than 5):
   ``n_{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2 }{p_j}``
+- `correction`: fixit
 
 # output
 
-1. p-value of the overall goodness-of-fit test
-2. test statistic (z value)
-3. a dictionary of the count of p-values in each of the four category
-4. a vector of outlier p-values, one for each four-taxon set
-5. network (first and second versions):
+1. p-value of the overall goodness-of-fit test (corrected for dependence if requested)
+2. test statistic (z value), uncorrected
+3. estimated σ² for the test statistic, used for the correction (1.0 if no correction)
+4. a dictionary of the count of p-values in each of the four category
+5. a vector of outlier p-values, one for each four-taxon set
+6. network (first and second versions):
    `net` with loglik field updated if `optbl` is false;
     copy of `net` with optimized branch lengths and loglik if `optbl` is true
 
@@ -69,36 +72,55 @@ Statistics & Probability Letters, 25(4):301-307.
 doi: [10.1016/0167-7152(94)00234-8](https://doi.org/10.1016/0167-7152(94)00234-8)
 """
 function quarnetGoFtest!(net::HybridNetwork,  df::DataFrame, optbl::Bool;
-                         quartetstat::Symbol=:LRT)
+                         quartetstat::Symbol=:LRT, correction::Symbol=:simulation)
     d = readTableCF(df);
-    res = quarnetGoFtest!(net, d, optbl; quartetstat=quartetstat); # order of value in results "res":
-    df.p_value = res[4]             # overallpval, teststat, counts, pval, net
+    res = quarnetGoFtest!(net, d, optbl; quartetstat=quartetstat, correction=correction);
+    # order in "res": overallpval, uncorrected z-value, sigma2, counts, pval, net
+    df[!,:p_value] .= res[5]
     return res
 end
 
 function quarnetGoFtest!(net::HybridNetwork, dcf::DataCF, optbl::Bool;
-                         quartetstat::Symbol=:LRT)
+                         quartetstat::Symbol=:LRT, correction::Symbol=:simulation)
     if optbl
         net = topologyMaxQPseudolik!(net,dcf);
     else
         topologyQPseudolik!(net,dcf);
     end
-    res = quarnetGoFtest(dcf, quartetstat);
-    return (res..., net) # (overallpval, teststat, counts, alpha, pseudolik, pval, net)
+    res = quarnetGoFtest(dcf, quartetstat, correction);
+    sig = 1.0 # 1 if independent: correction for dependence among 4-taxon set outlier pvalues
+    if correction == :simulation
+        @warn "simulation not implemented yet"
+        sig = sqrt(1.0)
+    else
+        @info "no correction for the dependence among the 4-taxon set outlier p-values"
+    end
+    overallpval = normccdf(res[1]/sig) # one-sided: P(Z > z)
+    return (overallpval, res..., net)  # (overallpval, uncorrected z-value, sigma2, counts, pval, net)
 end
 
 # @doc (@doc quarnetGoFtest!) quarnetGoFtest
-function quarnetGoFtest(dcf::DataCF, quartetstat::Symbol)
+function quarnetGoFtest(dcf::DataCF, quartetstat::Symbol, correction::Symbol)
     for q in dcf.quartet
         q.ngenes > 0 || error("quartet $q does not have info on number of genes")
     end
+    pval = fill(-1.0, dcf.numQuartets)
+    quarnetGoFtest!(pval, dcf.quartet, quartetstat, correction)
+end
+function quarnetGoFtest!(pval::AbstractVector, quartet::Vector{Quartet}, quartetstat::Symbol, correction::Symbol)
     # calculate outlier p-values
-    quartetstat in [:LRT, :Qlog, :pearson] || error("$quartetstat is not a valid quartetstat option")
-    pval = ( quartetstat == :LRT  ? multinom_lrt(dcf) :
-            (quartetstat == :Qlog ? multinom_qlog(dcf) : multinom_pearson(dcf) ))
+    if quartetstat == :LRT
+        multinom_lrt!(pval, quartet)
+    elseif quartetstat == :Qlog
+        multinom_qlog!(pval, quartet)
+    elseif quartetstat == :pearson
+        multinom_pearson!(pval, quartet)
+    else
+        error("$quartetstat is not a valid quartetstat option")
+    end
     # bin outlier p-values
+    nq = length(quartet)
     pcat = CategoricalArrays.cut(pval,[0, 0.01, 0.05, 0.1, 1], extend = true)
-    nq = dcf.numQuartets
     e = [0.01,0.04,0.05,0.90] * nq # expected counts
     count = countmap(pcat)       # observed counts, but some categories might be missing
     c = Float64[]
@@ -112,46 +134,39 @@ function quarnetGoFtest(dcf::DataCF, quartetstat::Symbol)
     end
     # one-sided test: after reducing to [0,.05) and [.05,1.0]
     teststat = ((c[1]+c[2])/nq - 0.05)/sqrt(0.0475/nq) # z-value. 0.0475 = 0.05 * (1-0.05)
-    overallpval = normccdf(teststat) # one-sided: P(Z > z)
-    return (overallpval, teststat, count, pval)
+    sigma2 = 1.0
+    return (teststat, sigma2, count, pval)
 end
 
 """
-    multinom_pearson(dcf::DataCF)
-    multinom_pearson(quartet::Vector{Quartet})
+    multinom_pearson!(pval::AbstractVector{Float64}, quartet::Vector{Quartet})
 
-Calculate the vector of outlier p-values (one per four-taxon set)
+Calculate outlier p-values (one per four-taxon set)
 using Pearson's chi-squared statistic under a multinomial distribution
 for the observed concordance factors.
 """
-multinom_pearson(dcf::DataCF) = multinom_pearson(dcf.quartet)
-function multinom_pearson(quartet::Vector{Quartet})
+function multinom_pearson!(pval::AbstractVector{Float64}, quartet::Vector{Quartet})
     nq = length(quartet)
-    pval = fill(-1.0, nq)
     for i in 1:nq
         qt = quartet[i]
         phat = qt.obsCF
         p = qt.qnet.expCF
         ngenes = qt.ngenes
         ipstat = ngenes * sum((phat .- p).^2 ./ p)
-        ipval = chisqccdf(2, ipstat)
-        pval[i] = ipval
+        pval[i] = chisqccdf(2, ipstat)
     end
-    return pval
+    return nothing
 end
 
 """
-    multinom_qlog(dcf::DataCF)
-    multinom_qlog(quartet::Vector{Quartet})
+    multinom_qlog!(pval::AbstractVector{Float64}, quartet::Vector{Quartet})
 
-Calculate the vector of outlier p-values (one per four-taxon set)
+Calculate outlier p-values (one per four-taxon set)
 using the Qlog statistic (Lorenzen, 1995),
 under a multinomial distribution for the observed concordance factors.
 """
-multinom_qlog(dcf::DataCF) = multinom_qlog(dcf.quartet)
-function multinom_qlog(quartet::Vector{Quartet})
+function multinom_qlog!(pval::AbstractVector{Float64}, quartet::Vector{Quartet})
     nq = length(quartet)
-    pval = fill(-1.0, nq)
     for i in 1:nq
         qt = quartet[i]
         phat = qt.obsCF
@@ -164,24 +179,20 @@ function multinom_qlog(quartet::Vector{Quartet})
             end
         end
         iqstat = 2 * ngenes * mysum
-        ipval = chisqccdf(2,iqstat)
-        pval[i] = ipval
+        pval[i] = chisqccdf(2,iqstat)
     end
-    return pval
+    return nothing
 end
 
 """
-    multinom_lrt(dcf::DataCF)
-    multinom_lrt(quartet::Vector{Quartet})
+    multinom_lrt!(pval::AbstractVector{Float64}, quartet::Vector{Quartet})
 
-Calculate the vector of outlier p-values (one per four-taxon set)
+Calculate outlier p-values (one per four-taxon set)
 using the likelihood ratio test under a multinomial distribution
 for the observed concordance factors.
 """
-multinom_lrt(dcf::DataCF) = multinom_lrt(dcf.quartet)
-function multinom_lrt(quartet::Vector{Quartet})
+function multinom_lrt!(pval::AbstractVector{Float64}, quartet::Vector{Quartet})
     nq = length(quartet)
-    pval = fill(-1.0, nq)
     for i in 1:nq
         qt = quartet[i]
         phat = qt.obsCF
@@ -194,9 +205,8 @@ function multinom_lrt(quartet::Vector{Quartet})
             end
         end
         igstat = 2 * ngenes * mysum
-        ipval = chisqccdf(2,igstat)
-        pval[i] = ipval
+        pval[i] = chisqccdf(2,igstat)
     end
-    return pval
+    return nothing
 end
 
