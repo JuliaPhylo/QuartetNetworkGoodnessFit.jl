@@ -55,7 +55,7 @@ fixit: explain the correction, options `:none`, simulation sample size, etc.
 
 1. p-value of the overall goodness-of-fit test (corrected for dependence if requested)
 2. test statistic (z value), uncorrected
-3. estimated σ² for the test statistic, used for the correction (1.0 if no correction)
+3. estimated σ for the test statistic, used for the correction (1.0 if no correction)
 4. a dictionary of the count of p-values in each of the four category
 5. a vector of outlier p-values, one for each four-taxon set
 6. network (first and second versions):
@@ -75,68 +75,99 @@ function quarnetGoFtest!(net::HybridNetwork,  df::DataFrame, optbl::Bool;
                          quartetstat::Symbol=:LRT, correction::Symbol=:simulation)
     d = readTableCF(df);
     res = quarnetGoFtest!(net, d, optbl; quartetstat=quartetstat, correction=correction);
-    # order in "res": overallpval, uncorrected z-value, sigma2, counts, pval, net
+    # order in "res": overallpval, uncorrected z-value, sigma, counts, pval, net
     df[!,:p_value] .= res[5]
     return res
 end
 
 function quarnetGoFtest!(net::HybridNetwork, dcf::DataCF, optbl::Bool;
                          quartetstat::Symbol=:LRT, correction::Symbol=:simulation)
+    correction in [:simulation, :none] || error("correction ($correction) must be one of :none or :simulation")
+    quartetstat in [:LRT, :Qlog, :pearson] || error("$quartetstat is not a valid quartetstat option")
     if optbl
         net = topologyMaxQPseudolik!(net,dcf);
     else
         topologyQPseudolik!(net,dcf);
     end
-    res = quarnetGoFtest(dcf, quartetstat, correction);
+    outlierp_fun! = ( quartetstat ==  :LRT ? multinom_lrt! :
+                     (quartetstat == :Qlog ? multinom_qlog! : multinom_pearson!))
+    gof_zval, counts_4cat, outlierpvals = quarnetGoFtest(dcf.quartet, outlierp_fun!)
     sig = 1.0 # 1 if independent: correction for dependence among 4-taxon set outlier pvalues
     if correction == :simulation
-        @warn "simulation not implemented yet"
-        sig = sqrt(1.0)
-    else
-        @info "no correction for the dependence among the 4-taxon set outlier p-values"
+        sig = quarnetGoFtest_simulation(net, dcf, outlierp_fun!)
     end
-    overallpval = normccdf(res[1]/sig) # one-sided: P(Z > z)
-    return (overallpval, res..., net)  # (overallpval, uncorrected z-value, sigma2, counts, pval, net)
+    overallpval = normccdf(gof_zval/sig) # one-sided: P(Z > z)
+    return (overallpval, gof_zval, sig, counts_4cat, outlierpvals, net)
 end
 
 # @doc (@doc quarnetGoFtest!) quarnetGoFtest
-function quarnetGoFtest(dcf::DataCF, quartetstat::Symbol, correction::Symbol)
-    for q in dcf.quartet
+function quarnetGoFtest(quartet::Vector{Quartet}, outlierp_fun!::Function)
+   for q in quartet
         q.ngenes > 0 || error("quartet $q does not have info on number of genes")
     end
-    pval = fill(-1.0, dcf.numQuartets)
-    quarnetGoFtest!(pval, dcf.quartet, quartetstat, correction)
+    pval = fill(-1.0, length(quartet))
+    gof_zval = quarnetGoFtest!(pval, quartet, outlierp_fun!)
+    counts_4cat = pval_4categorycounts(pval)
+    return (gof_zval, counts_4cat, pval)
 end
-function quarnetGoFtest!(pval::AbstractVector, quartet::Vector{Quartet}, quartetstat::Symbol, correction::Symbol)
-    # calculate outlier p-values
-    if quartetstat == :LRT
-        multinom_lrt!(pval, quartet)
-    elseif quartetstat == :Qlog
-        multinom_qlog!(pval, quartet)
-    elseif quartetstat == :pearson
-        multinom_pearson!(pval, quartet)
-    else
-        error("$quartetstat is not a valid quartetstat option")
-    end
-    # bin outlier p-values
-    nq = length(quartet)
-    pcat = CategoricalArrays.cut(pval,[0, 0.01, 0.05, 0.1, 1], extend = true)
-    e = [0.01,0.04,0.05,0.90] * nq # expected counts
-    count = countmap(pcat)       # observed counts, but some categories might be missing
-    c = Float64[]
-    interval = ["[0.0, 0.01)","[0.01, 0.05)","[0.05, 0.1)","[0.1, 1.0]"]
-    for i in interval
-        if haskey(count, i)
-            push!(c,count[i])
-        else
-            push!(c,0.0)
-        end
-    end
-    # one-sided test: after reducing to [0,.05) and [.05,1.0]
-    teststat = ((c[1]+c[2])/nq - 0.05)/sqrt(0.0475/nq) # z-value. 0.0475 = 0.05 * (1-0.05)
-    sigma2 = 1.0
-    return (teststat, sigma2, count, pval)
+
+function quarnetGoFtest!(pval::AbstractVector, quartet::Vector{Quartet}, outlierp_fun!::Function)
+    outlierp_fun!(pval, quartet) # calculate outlier p-values
+    # uncorrected z-value: from one-sided test after binning p-values into [0,.05) and [.05,1.0]
+    nsmall = count(p -> p < 0.05, pval)
+    ntot = count(p -> isfinite(p), pval)
+    ntot == length(pval) || @warn "$(length(pval) - ntot) outlier p-value(s) is/are Inf of NaN..."
+    gof_zval = (nsmall/ntot - 0.05)/sqrt(0.0475/ntot) # 0.0475 = 0.05 * (1-0.05)
+    return gof_zval
 end
+
+function pval_4categorycounts(pval::AbstractArray)
+    counts = Dict( # bin p-values in 4 categories, focus on smaller p-values
+        "[0.0, 0.01)" => count(p -> p < 0.01, pval),
+        "[0.01, 0.05)"=> count(p -> 0.01 <= p < 0.05, pval),
+        "[0.05, 0.1)" => count(p -> 0.05 <= p < 0.1, pval),
+        "[0.1, 1.0]"  => count(p -> 0.1 <= p, pval))
+    return counts
+end
+
+
+function quarnetGoFtest_simulation(net::HybridNetwork, dcf::DataCF, outlierp_fun!::Function)
+    nsim = 1000 # fixit: add option for the user to control the # simulated data sets
+    ngenes = 300 # fixit: use ngenes from dcf, but handle the case when it's different across quartets
+    verbose=true
+    seed = 1234 # fixit: add option for the user to control the seed
+    seed!(seed)
+    hlseed = rand(1:10000000000, nsim)
+    netHL = hybridlambdaformat(net)
+    netHLquoted = "'$netHL'"
+    nq = length(dcf.quartet)
+    pval = fill(-1.0, nq) # to be re-used across simulations, but not shared between processes
+    sim_zval = SharedArray{Float64,2}(nsim) # to be shared between processes
+    expCF = SharedArray([q.qnet.expCF for q in dcf.quartet])
+
+    @sync @distributed for irep in 1:nsim
+        @info "starting replicate $i"
+    gt = joinpath(hyblamdir, "$(rootname)-$irep") # root name given to hybrid-Lambda
+    gtcu = gt * "_coal_unit"    # name of output file created by hybrid-Lambda
+    hlcommand = `$hybridlambda -spcu $netHLquoted -num $ngenes -seed $(hlseed[irep]) -o $gt`
+    run(hlcommand);
+    run(`sed -i "" 's/_1//g' $gtcu`); # replaces individual names like "s5_1" into "s5"
+    treelist = readMultiTopology(gtcu);
+    length(treelist) == ngenes || @warn "unexpected number of gene trees" # sanity check
+    df = writeTableCF(countquartetsintrees(treelist; showprogressbar=verbose)...) # data frame
+    dataCF = readTableCF!(df)
+    verbose && @info "copying expected quartet CFs"
+    for qi in 1:nq # quartet index
+        # fixit: 4-taxon sets would be ordered differently
+        # use: taxon = [q.taxon for q in dataCF.quartet]
+        dataCF.quartet[qi].qnet.expCF = expCF[qi]
+    end
+    verbose && @info "starting tests"
+    sim_zval[irep] = quarnetGoFtest!(pval, dataCF.quartet, outlierp_fun!)
+    end
+    return sim_zval # fixit: return their sigma2 values in fact, assuming mean=0
+end
+
 
 """
     multinom_pearson!(pval::AbstractVector{Float64}, quartet::Vector{Quartet})
