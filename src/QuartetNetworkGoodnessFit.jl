@@ -7,7 +7,7 @@ using PhyloNetworks
 using Random: seed!
 using SharedArrays
 using SpecialFunctions: loggamma
-using Statistics: mean
+using Statistics: mean, median
 using StatsFuns: normccdf, chisqccdf, betacdf, betaccdf
 
 export

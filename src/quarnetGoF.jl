@@ -81,7 +81,8 @@ function quarnetGoFtest!(net::HybridNetwork,  df::DataFrame, optbl::Bool;
 end
 
 function quarnetGoFtest!(net::HybridNetwork, dcf::DataCF, optbl::Bool;
-                         quartetstat::Symbol=:LRT, correction::Symbol=:simulation)
+                         quartetstat::Symbol=:LRT,
+                         correction::Symbol=:simulation, seed=1234::Int)
     correction in [:simulation, :none] || error("correction ($correction) must be one of :none or :simulation")
     quartetstat in [:LRT, :Qlog, :pearson] || error("$quartetstat is not a valid quartetstat option")
     if optbl
@@ -94,7 +95,7 @@ function quarnetGoFtest!(net::HybridNetwork, dcf::DataCF, optbl::Bool;
     gof_zval, counts_4cat, outlierpvals = quarnetGoFtest(dcf.quartet, outlierp_fun!)
     sig = 1.0 # 1 if independent: correction for dependence among 4-taxon set outlier pvalues
     if correction == :simulation
-        sig = quarnetGoFtest_simulation(net, dcf, outlierp_fun!)
+        sig = quarnetGoFtest_simulation(net, dcf, outlierp_fun!, seed)
     end
     overallpval = normccdf(gof_zval/sig) # one-sided: P(Z > z)
     return (overallpval, gof_zval, sig, counts_4cat, outlierpvals, net)
@@ -131,41 +132,42 @@ function pval_4categorycounts(pval::AbstractArray)
 end
 
 
-function quarnetGoFtest_simulation(net::HybridNetwork, dcf::DataCF, outlierp_fun!::Function)
-    nsim = 1000 # fixit: add option for the user to control the # simulated data sets
-    ngenes = 300 # fixit: use ngenes from dcf, but handle the case when it's different across quartets
+function quarnetGoFtest_simulation(net::HybridNetwork, dcf::DataCF, outlierp_fun!::Function, seed::Int;
+        nsimulations=1000::Int, verbose=true::Bool)
+    ngenes = ceil(Int, median(q.ngenes for q in dcf.quartet))
+    # fixit: how handle case when different #genes across quartets? need taxon set for each gene, not just ngenes.
     verbose=true
-    seed = 1234 # fixit: add option for the user to control the seed
-    seed!(seed)
-    hlseed = rand(1:10000000000, nsim)
+    seed!(seed) # master seed
+    hlseed = rand(1:10000000000, nsimulations) # 1 seed for each simulation
     netHL = hybridlambdaformat(net)
     netHLquoted = "'$netHL'"
     nq = length(dcf.quartet)
     pval = fill(-1.0, nq) # to be re-used across simulations, but not shared between processes
-    sim_zval = SharedArray{Float64,2}(nsim) # to be shared between processes
+    sim_zval = SharedArray{Float64,2}(nsimulations) # to be shared between processes
     expCF = SharedArray([q.qnet.expCF for q in dcf.quartet])
+    hyblamdir = mktempdir(pwd()) # temporary directory to store hybrid-Lambda output files
 
-    @sync @distributed for irep in 1:nsim
-        @info "starting replicate $i"
-    gt = joinpath(hyblamdir, "$(rootname)-$irep") # root name given to hybrid-Lambda
-    gtcu = gt * "_coal_unit"    # name of output file created by hybrid-Lambda
-    hlcommand = `$hybridlambda -spcu $netHLquoted -num $ngenes -seed $(hlseed[irep]) -o $gt`
-    run(hlcommand);
-    run(`sed -i "" 's/_1//g' $gtcu`); # replaces individual names like "s5_1" into "s5"
-    treelist = readMultiTopology(gtcu);
-    length(treelist) == ngenes || @warn "unexpected number of gene trees" # sanity check
-    df = writeTableCF(countquartetsintrees(treelist; showprogressbar=verbose)...) # data frame
-    dataCF = readTableCF!(df)
-    verbose && @info "copying expected quartet CFs"
-    for qi in 1:nq # quartet index
-        # fixit: 4-taxon sets would be ordered differently
-        # use: taxon = [q.taxon for q in dataCF.quartet]
-        dataCF.quartet[qi].qnet.expCF = expCF[qi]
+    @sync @distributed for irep in 1:nsimulations
+        @info "starting replicate $irep"
+        gt = joinpath(hyblamdir, "genetrees_replicate$irep") # root name given to hybrid-Lambda
+        gtcu = gt * "_coal_unit"                 # name of output file created by hybrid-Lambda
+        hlcommand = `$hybridlambda -spcu $netHLquoted -num $ngenes -seed $(hlseed[irep]) -o $gt`
+        run(hlcommand);
+        run(`sed -i "" 's/_1//g' $gtcu`); # replaces individual names like "s5_1" into "s5"
+        treelist = readMultiTopology(gtcu);
+        length(treelist) == ngenes || @warn "unexpected number of gene trees, file $gtcu" # sanity check
+        df = writeTableCF(countquartetsintrees(treelist; showprogressbar=verbose)...) # data frame
+        dataCF = readTableCF!(df)
+        verbose && @info "copying expected quartet CFs"
+        for qi in 1:nq # quartet index
+            # FIXIT: 4-taxon sets would be ordered differently
+            # use: taxon = [q.taxon for q in dataCF.quartet]
+            dataCF.quartet[qi].qnet.expCF = expCF[qi]
+        end
+        verbose && @info "starting tests"
+        sim_zval[irep] = quarnetGoFtest!(pval, dataCF.quartet, outlierp_fun!)
     end
-    verbose && @info "starting tests"
-    sim_zval[irep] = quarnetGoFtest!(pval, dataCF.quartet, outlierp_fun!)
-    end
-    return sim_zval # fixit: return their sigma2 values in fact, assuming mean=0
+    return sum(sim_zval.^2)/nsimulations # estimated sigma2, assuming mean=0
 end
 
 
