@@ -104,11 +104,7 @@ function ticr(dcf::DataCF, quartetstat::Symbol, test::Symbol)
     pval = res[1];
     testpram = [res[2],res[3]];
     # bin the outlier p-values
-    counts = Dict( # bin p-values in 4 categories: observed counts
-        "[0.0, 0.01)" => count(p -> p < 0.01, pval),
-        "[0.01, 0.05)"=> count(p -> 0.01 <= p < 0.05, pval),
-        "[0.05, 0.1)" => count(p -> 0.05 <= p < 0.1, pval),
-        "[0.1, 1.0]"  => count(p -> 0.1 <= p, pval))
+    counts = pval_4categorycounts(pval)
     nq = sum(values(counts)) # should be number of quartets... unless some had a NaN or Inf outlier pvalue
     e = [0.01,0.04,0.05,0.90] * nq # expected counts
     c = [counts[i] for i in ["[0.0, 0.01)","[0.01, 0.05)","[0.05, 0.1)","[0.1, 1.0]"]]
@@ -122,6 +118,16 @@ function ticr(dcf::DataCF, quartetstat::Symbol, test::Symbol)
     end
     return (overallpval, teststat, counts, testpram, pval)
 end
+
+function pval_4categorycounts(pval::AbstractArray)
+    counts = Dict( # bin p-values in 4 categories, focus on smaller p-values
+        "[0.0, 0.01)" => count(p -> p < 0.01, pval),
+        "[0.01, 0.05)"=> count(p -> 0.01 <= p < 0.05, pval),
+        "[0.05, 0.1)" => count(p -> 0.05 <= p < 0.1, pval),
+        "[0.1, 1.0]"  => count(p -> 0.1 <= p, pval))
+    return counts
+end
+
 
 """
     dirichlet_max(dcf::DataCF)
