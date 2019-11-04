@@ -2,6 +2,7 @@ using QuartetNetworkGoodnessFit
 using CSV
 using PhyloNetworks
 using Test
+using Distributed
 
 @testset "quartet network GoF tests" begin
   # each file should be its own testset, to run them all even if one has a failure

@@ -104,32 +104,30 @@ function ticr(dcf::DataCF, quartetstat::Symbol, test::Symbol)
     pval = res[1];
     testpram = [res[2],res[3]];
     # bin the outlier p-values
-    pcat = CategoricalArrays.cut(pval,[0, 0.01, 0.05, 0.1, 1], extend = true) # CategoricalArrays is required by DataFrames
-    nq = dcf.numQuartets
+    counts = pval_4categorycounts(pval)
+    nq = sum(values(counts)) # should be number of quartets... unless some had a NaN or Inf outlier pvalue
     e = [0.01,0.04,0.05,0.90] * nq # expected counts
-    count = countmap(pcat)         # observed counts, but some categories might be missing
-    c = Float64[]
-    interval = ["[0.0, 0.01)","[0.01, 0.05)","[0.05, 0.1)","[0.1, 1.0]"]
-    for i in interval
-        if haskey(count, i)
-            push!(c,count[i])
-        else
-            push!(c,0.0)
-        end
-    end
+    c = [counts[i] for i in ["[0.0, 0.01)","[0.01, 0.05)","[0.05, 0.1)","[0.1, 1.0]"]]
+    # observed counts, but as a vector (not dictionary) and in correct order
     if test == :onesided # reduce to [0,.05) and [.05,1.0] and do a one-sided test
         teststat = ((c[1]+c[2])/nq - 0.05)/sqrt(0.0475/nq) # z-value. 0.0475 = 0.05 * (1-0.05)
         overallpval = normccdf(teststat) # one-sided: P(Z > z)
     elseif test == :goodness # as in Stenz et al (2015) and in phylolm, chi-square test statistics:
-        #teststat = 0.0
-        #for i in 1:length(c)
-        #    teststat += (c[i]-e[i])^2 / e[i]
-        #end
         teststat = sum((c.-e).^2 ./ e)
         overallpval = chisqccdf(3,teststat)
     end
-    return (overallpval, teststat, count, testpram, pval)
+    return (overallpval, teststat, counts, testpram, pval)
 end
+
+function pval_4categorycounts(pval::AbstractArray)
+    counts = Dict( # bin p-values in 4 categories, focus on smaller p-values
+        "[0.0, 0.01)" => count(p -> p < 0.01, pval),
+        "[0.01, 0.05)"=> count(p -> 0.01 <= p < 0.05, pval),
+        "[0.05, 0.1)" => count(p -> 0.05 <= p < 0.1, pval),
+        "[0.1, 1.0]"  => count(p -> 0.1 <= p, pval))
+    return counts
+end
+
 
 """
     dirichlet_max(dcf::DataCF)

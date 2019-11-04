@@ -1,13 +1,14 @@
 module QuartetNetworkGoodnessFit
 
-using CategoricalArrays: cut
 using DataFrames
+using Distributed
 using NLopt
 using PhyloNetworks
+using Random: seed!
+using SharedArrays
 using SpecialFunctions: loggamma
-using Statistics: mean
+using Statistics: mean, median
 using StatsFuns: normccdf, chisqccdf, betacdf, betaccdf
-using StatsBase: countmap
 
 export
 quarnetGoFtest!,
@@ -18,27 +19,22 @@ ticr!
 include("ticr.jl")
 include("quarnetGoF.jl")
 
-# install hybrid-Lambda and define variable hybridlambda
+# check hybrid-Lambda was downloaded (during build) and define variable hybridlambda
 const depsjl_path = joinpath(@__DIR__, "..", "deps", "deps.jl")
-if !isfile(depsjl_path)
-    warnmsg = """
-    QuartetNetworkGoodnessFit not installed properly.
-    run 'using Pkg; Pkg.build("QuartetNetworkGoodnessFit")', restart Julia and try again.
-    If the error persists, install the Hybrid-Lambda dependency manually.
+function sethybridlambdapath(path::String) global hybridlambda = path; end
+warnmsg = """Functions using hybrid-Lambda for simulations will not work. Run:
+    using Pkg; Pkg.build("QuartetNetworkGoodnessFit" then restart Julia and try again.
+    If the error persists, install the Hybrid-Lambda dependency manually and run:
+    QuartetNetworkGoodnessFit.sethybridlambdapath("path_to_your_hybrid-Lambda_executable")
     """
-    @warn warnmsg
+if !isfile(depsjl_path)
+    @warn "QuartetNetworkGoodnessFit not installed properly: no deps.jl file.\n" * warnmsg
 else
     include(depsjl_path)
     try # check dependencies. `check_deps` defined in `deps.jl`
         check_deps()
-    catch e # only 1 dependency: hybrid-Lambda
-        warnmsg = """
-        hybrid-Lambda binary not installed (or installed properly).
-        Functions that depend on gene tree simulations with hybrid-Lambda will not work.
-        Install Hybrid-Lambda manually, and place the binary executable where expected...
-        """
-        @warn warnmsg
+    catch e
+        @warn "QuartetNetworkGoodnessFit not installed properly: hybrid-Lambda executable not found.\n" * warnmsg
     end
 end
-
 end # module
