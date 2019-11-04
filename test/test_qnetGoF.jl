@@ -55,18 +55,19 @@ hldir = filter!(f -> startswith(f, "jl_"), readdir())
 @test length(hldir) == 1
 @test length(readdir(hldir[1])) == 1
 rm(hldir[1], recursive=true)
-# similar test, but with multiple processors and other options
+# similar test, but with multiple processors and other options, and interesting seed:
+# for s in 1:200 netresult1 = quarnetGoFtest!(net3,d,false; seed=s, nsim=5);
+#                if netresult1[3] > 3.0; @show (s, netresult1); break; end;end;
 Distributed.addprocs(2)
 # start with: julia -p 2 --project
 # or: using Distributed; @everywhere begin; using Pkg; Pkg.activate("."); using PhyloNetworks; end
 @everywhere using QuartetNetworkGoodnessFit
-netresult1 = quarnetGoFtest!(net3,d,false; seed=8321, nsim=5);
+netresult1 = quarnetGoFtest!(net3,d,false; seed=182, nsim=5);
 Distributed.rmprocs(workers())
 @test netresult1[4] ≈ [0.0024449826689709165,0.01496306673600063,0.01496306673600063,0.0024449826689709165,0.04086460431063039,0.9998541057240138,0.1901450501005025,0.8909735618259936,0.9058717147295428,0.8909735618259936,0.1901450501005025,0.9058717147295428,0.9913859984840471,0.3656465603640152,0.04086460431063039]
 @test netresult1[2] ≈ 6.21966321647047 # z stat, uncorrected
-@test netresult1[3] != 1.0 # sigma
-@test length(netresult1[6]) == 5
-@test netresult1[6][1] ≈ -0.8885233166386386
+@test netresult1[3] ≈ 3.405362128771355 # sigma
+@test netresult1[6] ≈ vcat(7.4043609719886545, repeat([-0.8885233166386386],4))
 end
 
 end
