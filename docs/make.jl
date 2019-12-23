@@ -16,5 +16,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/cecileane/QuartetNetworkGoodnessFit.jl.git"
+    repo = "github.com/cecileane/QuartetNetworkGoodnessFit.jl.git",
+    push_preview = true,
 )

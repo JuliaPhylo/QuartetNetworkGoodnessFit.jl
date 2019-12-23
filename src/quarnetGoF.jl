@@ -21,7 +21,11 @@ Finally, a one-sided goodness-of-fit test is performed on the frequency of
 outlier 4-taxon sets to see if there are more outliers than expected.
 The z-value for this test corresponds to the null hypothesis that
 5% outlier p-values are < 0.05 (versus more than 5%):
-``z = \frac{proportion_of_outliers - 0.05}{\sqrt(0.05 * 0.95/number_4_taxon_sets)}``
+
+```math
+z = \frac{\mathrm{proportion.outliers} - 0.05}{\sqrt{0.05 \times 0.95/\mathrm{number.4taxon.sets}}}.
+```
+
 This z-value corresponds to a test that assumes independent outlier p-values
 across 4-taxon sets: it makes no correction for dependence.
 
@@ -32,7 +36,7 @@ The z-score is calculated on each simulated data set.
 Under independence, these z-scores have mean 0 and variance 1.
 Under dependence, these z-scores still have mean 0, but an inflated variance.
 This variance σ² is estimated from the simulations, and the corrected p-value
-is obtained by comparing the original z value to N(0,σ).
+is obtained by comparing the original z value to N(0,σ²).
 When `correction=:none`, σ is taken to be 1 (independence): *not* recommended!
 
 - The first version takes a `DataFrame` where each row corresponds to a given
@@ -54,14 +58,14 @@ When `correction=:none`, σ is taken to be 1 (independence): *not* recommended!
   each four-taxon set, which is then compared to a chi-squared distribution
   with 2 degrees of freedom to get a p-value.
   The default is `:LRT` for the likelihood ratio:
-  ``2n_{genes} \sum_{j=1}^3 {\hat p}_j (\log{\hat p}_j - \log p_j)`` where ``p_j``
+  ``2n_\mathrm{genes} \sum_{j=1}^3 {\hat p}_j (\log{\hat p}_j - \log p_j)`` where ``p_j``
   is the quartet CF expected from the network, and ``{\hat p}_j`` is the
   quartet CF observed in the data.  
   Alternatives are `:Qlog` for the Qlog statistics (Lorenzen, 1995):
-  ``2n_{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2}{p_j (\log{\hat p}_j - \log p_j)}``  
+  ``2n_\mathrm{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2}{p_j (\log{\hat p}_j - \log p_j)}``  
   and `:pearson` for Pearon's chi-squared statistic, which behaves poorly when
   the expected count is low (e.g. less than 5):
-  ``n_{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2 }{p_j}``
+  ``n_\mathrm{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2 }{p_j}``
 - `correction=:simulation` to correct for dependence across 4-taxon.
   Use `:none` to turn off simulations (and the correction for dependence).
 - `seed=1234`: master seed to control the seeds for gene tree simulations.
