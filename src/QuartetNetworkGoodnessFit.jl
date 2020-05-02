@@ -23,7 +23,7 @@ include("quarnetGoF.jl")
 const depsjl_path = joinpath(@__DIR__, "..", "deps", "deps.jl")
 function sethybridlambdapath(path::String) global hybridlambda = path; end
 warnmsg = """Functions using hybrid-Lambda for simulations will not work. Run:
-    using Pkg; Pkg.build("QuartetNetworkGoodnessFit" then restart Julia and try again.
+    using Pkg; Pkg.build("QuartetNetworkGoodnessFit") then restart Julia and try again.
     If the error persists, install the Hybrid-Lambda dependency manually and run:
     QuartetNetworkGoodnessFit.sethybridlambdapath("path_to_your_hybrid-Lambda_executable")
     """
