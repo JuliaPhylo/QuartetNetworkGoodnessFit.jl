@@ -12,10 +12,10 @@ using StatsFuns: normccdf, chisqccdf, betacdf, betaccdf
 
 export
 quarnetGoFtest!,
-quarnetGoFtest,
 ticr,
 ticr!
 
+include("utils.jl")
 include("ticr.jl")
 include("quarnetGoF.jl")
 

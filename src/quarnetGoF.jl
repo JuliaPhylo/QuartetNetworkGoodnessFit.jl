@@ -45,12 +45,21 @@ When `correction=:none`, σ is taken to be 1 (independence): *not* recommended!
 - The second version takes a `DataCF` object and modifies it by updating
   the expected concordance factors stored in that object.
 
+Note that `net` is **not** modified.
+
 # arguments
 
-- `optbl`: when `false`, `net.loglik` is updated but branch lengths are
-  taken as is. When `true`, a copy of `net` is used to conduce the test,
-  with optimized branch lengths (in coalescent units) and updated loglik.
-  This network is returned.
+- `optbl`: when `false`, branch lengths in `net` are taken as is, and need to be
+  in coalescent units.
+  When `optbl=true`, branch lengths in `net` are optimized, to optimize the
+  pseudo log likelihood score as in SNaQ (see
+  [here](https://crsl4.github.io/PhyloNetworks.jl/stable/lib/public/#PhyloNetworks.topologyMaxQPseudolik!)).
+  In both cases, any missing branch length is assigned a value with
+  [`ultrametrize!`](@ref), to make the major tree ultrametric, in an attempt
+  to adhere to the current requirements of the hybrid-lambda simulator.
+  Missing branch lengths may arise if they are not identifiable, such as
+  lengths of external branches if there is a single allele per taxon.
+  The network is returned as part of the output.
 
 # keyword arguments
 
@@ -67,7 +76,7 @@ When `correction=:none`, σ is taken to be 1 (independence): *not* recommended!
   the expected count is low (e.g. less than 5):
   ``n_\mathrm{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2 }{p_j}``
 - `correction=:simulation` to correct for dependence across 4-taxon.
-  Use `:none` to turn off simulations (and the correction for dependence).
+  Use `:none` to turn off simulations and the correction for dependence.
 - `seed=1234`: master seed to control the seeds for gene tree simulations.
 - `nsim=1000`: number of simulated data sets. Each data set is simulated to have the
   median number of genes that each 4-taxon sets has data for.
@@ -81,8 +90,8 @@ When `correction=:none`, σ is taken to be 1 (independence): *not* recommended!
 # output
 
 1. p-value of the overall goodness-of-fit test (corrected for dependence if requested)
-2. test statistic (z value), uncorrected
-3. estimated σ for the test statistic, used for the correction (1.0 if no correction)
+2. uncorrected z value test statistic
+3. estimated σ for the test statistic used for the correction (1.0 if no correction)
 4. a vector of outlier p-values, one for each four-taxon set
 5. network (first and second versions):
    `net` with loglik field updated if `optbl` is false;
@@ -92,9 +101,10 @@ When `correction=:none`, σ is taken to be 1 (independence): *not* recommended!
    calculate an empirical p-value (instead of the p-value in #1), as the
    proportion of simulated z-values that are ⩾ the observed z-value (in #2).
 
-See also: [`ticr!`](@ref).
-
 # references
+
+- Ruoyi Cai & Cécile Ané (in prep).
+  Assessing the fit of the multi-species network coalescent to multi-locus data.
 
 - Lorenzen (1995).
   A new family of goodness-of-fit statistics for discrete multivariate data.
@@ -114,10 +124,17 @@ function quarnetGoFtest!(net::HybridNetwork, dcf::DataCF, optbl::Bool;
     correction in [:simulation, :none] || error("correction ($correction) must be one of :none or :simulation")
     quartetstat in [:LRT, :Qlog, :pearson] || error("$quartetstat is not a valid quartetstat option")
     if optbl
-        net = topologyMaxQPseudolik!(net,dcf);
+        net_saved = net
+        net = topologyMaxQPseudolik!(net,dcf)
+        reroot!(net, net_saved) # restore the root where it was earlier
     else
-        topologyQPseudolik!(net,dcf);
+        # assume the user gave a time-consistent and ultrametric network...
+        net = deepcopy(net) # because we may assign values to missing branch lengths
+        topologyQPseudolik!(net,dcf)
     end
+    # assign values to missing branch lengths
+    # hybrid-lambda requires a time-consistent and ultrametric network...
+    ultrametrize!(net, verbose)
     outlierp_fun! = ( quartetstat ==  :LRT ? multinom_lrt! :
                      (quartetstat == :Qlog ? multinom_qlog! : multinom_pearson!))
     gof_zval, outlierpvals = quarnetGoFtest(dcf.quartet, outlierp_fun!)
