@@ -12,8 +12,8 @@ for each of the 3 topologies on these 4 taxa, that is, the
 proportion of genes estimated to have each 4-taxon unrooted topology.
 
 ```@repl gof
-using QuartetNetworkGoodnessFit, CSV
-qCF = CSV.read(joinpath(dirname(pathof(QuartetNetworkGoodnessFit)), "..","test","example_qCF_5taxa.csv"));
+using QuartetNetworkGoodnessFit, DataFrames, CSV
+qCF = DataFrame!(CSV.File(joinpath(dirname(pathof(QuartetNetworkGoodnessFit)), "..","test","example_qCF_5taxa.csv")));
 qCF
 ```
 

@@ -1,6 +1,6 @@
 @testset "testing GoF, multinomial distribution" begin
 
-df = CSV.read(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv"))
+df = DataFrame!(CSV.File(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv")))
 d0 = readTableCF(df)
 d = deepcopy(d0)
 net3 = readTopology("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");

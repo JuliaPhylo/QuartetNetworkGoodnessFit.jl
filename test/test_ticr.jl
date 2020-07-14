@@ -1,7 +1,7 @@
 @testset "testing TICR, Dirichlet distribution" begin
 # previously in PhyloNetworks
 
-df = CSV.read(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv"));
+df = DataFrame!(CSV.File(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv")));
 d = readTableCF(df);
 
 @testset "ticr! on data frame, tree" begin
