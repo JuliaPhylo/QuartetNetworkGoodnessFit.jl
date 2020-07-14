@@ -1,5 +1,5 @@
 using QuartetNetworkGoodnessFit
-using CSV
+using DataFrames, CSV
 using PhyloNetworks
 using Test
 using Distributed
