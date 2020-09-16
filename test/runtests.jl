@@ -8,4 +8,5 @@ using Distributed
   # each file should be its own testset, to run them all even if one has a failure
   include("test_ticr.jl")
   include("test_qnetGoF.jl")
+  include("test_utils.jl")
 end
