@@ -125,13 +125,15 @@ function quarnetGoFtest!(net::HybridNetwork, dcf::DataCF, optbl::Bool;
     quartetstat in [:LRT, :Qlog, :pearson] || error("$quartetstat is not a valid quartetstat option")
     if optbl
         net_saved = net
-        net = topologyMaxQPseudolik!(net,dcf)
+        # default tolerance values are too lenient
+        net = topologyMaxQPseudolik!(net,dcf, ftolRel=1e-12, ftolAbs=1e-10, xtolRel=1e-10, xtolAbs=1e-10)
         reroot!(net, net_saved) # restore the root where it was earlier
     else
         # assume the user gave a time-consistent and ultrametric network...
         net = deepcopy(net) # because we may assign values to missing branch lengths
-        topologyQPseudolik!(net,dcf)
     end
+    # below: to update expected CFs. not quite done by topologyMaxQPseudolik!
+    topologyQPseudolik!(net,dcf)
     # assign values to missing branch lengths
     # hybrid-lambda requires a time-consistent and ultrametric network...
     ultrametrize!(net, verbose)

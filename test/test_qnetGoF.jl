@@ -63,7 +63,7 @@ Distributed.addprocs(2)
 # start with: julia -p 2 --project
 # or: using Distributed; @everywhere begin; using Pkg; Pkg.activate("."); using PhyloNetworks; end
 @everywhere using QuartetNetworkGoodnessFit
-netresult1 = quarnetGoFtest!(net3,d,false; seed=182, nsim=5);
+netresult1 = quarnetGoFtest!(net3,d,false; seed=1456, nsim=5);
 @test netresult1[4] ≈ [0.0024449826689709165,0.01496306673600063,0.01496306673600063,0.0024449826689709165,0.04086460431063039,0.9998541057240138,0.1901450501005025,0.8909735618259936,0.9058717147295428,0.8909735618259936,0.1901450501005025,0.9058717147295428,0.9913859984840471,0.3656465603640152,0.04086460431063039]
 @test netresult1[2] ≈ 6.21966321647047 # z stat, uncorrected
 @test netresult1[3] ≈ 3.405362128771355 # sigma
@@ -74,7 +74,7 @@ netresult1 = quarnetGoFtest!(net3,d,true; seed=182, nsim=2, quartetstat=:Qlog);
 # WARNING: Gene tree is not ultrametric
 # ... until hybrid-lambda can accommodate non-time-consistent networks reliably
 Distributed.rmprocs(workers())
-@test netresult1[4] ≈ [.7299,.07298,.07298,.7299,.1147,.9971,.7059,.9967,1.,.9967,.7059,1.,.9991,.8846,.1147] rtol=1e-4
+@test netresult1[4] ≈ [.73,.073,.073,.73,.115,.997,.706,.997,1.,.997,.706,1.,1.,.885,.115] rtol=0.01
 @test netresult1[2] ≈ -0.8885233166386386 # z stat, uncorrected
 end
 
