@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/cecileane/QuartetNetworkGoodnessFit.jl.svg?branch=master)](https://travis-ci.org/cecileane/QuartetNetworkGoodnessFit.jl)
+[![Build Status](https://travis-ci.com/cecileane/QuartetNetworkGoodnessFit.jl.svg?branch=master)](https://travis-ci.com/cecileane/QuartetNetworkGoodnessFit.jl)
 [![Coverage Status](https://coveralls.io/repos/cecileane/QuartetNetworkGoodnessFit.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/cecileane/QuartetNetworkGoodnessFit.jl?branch=master)
 [![codecov.io](http://codecov.io/github/cecileane/QuartetNetworkGoodnessFit.jl/coverage.svg?branch=master)](http://codecov.io/github/cecileane/QuartetNetworkGoodnessFit.jl?branch=master)
 

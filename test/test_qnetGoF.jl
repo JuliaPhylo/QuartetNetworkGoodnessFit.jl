@@ -80,7 +80,7 @@ Distributed.rmprocs(workers())
 # network that caused a bug in hybrid-Lambda v0.6.2-beta, see
 # https://github.com/hybridLambda/hybrid-Lambda/issues/36
 net = readTopology("(((A:7.13,(B:5.98)#H18:1.15::0.79):0.1,C:7.23):0.07,((D:0.0)#H19:6.2::0.89,(E:5.64,(O:0.0,#H19:0.0::0.11):5.64):0.56):1.1,#H18:1.32::0.21);")
-@test_logs (:warn,r"^The simulated z values") quarnetGoFtest!(net,d,false; seed=419, nsim=5);
+@test_logs quarnetGoFtest!(net,d,false; seed=419, nsim=5);
 
 end
 
