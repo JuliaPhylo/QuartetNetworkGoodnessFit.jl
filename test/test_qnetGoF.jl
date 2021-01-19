@@ -51,7 +51,7 @@ netresult1 = quarnetGoFtest!(net3,d,false; seed=4321, verbose=true, nsim=1,
                              keepfiles=true, quartetstat=:pearson);
 @test netresult1[4] ≈ [1.244e-11,.0009281,.0009281,1.244e-11,.007581,.9998,.0129,.9438,.9471,.9438,.0129,.9471,.9957,.2406,.007581] rtol=1e-4
 @test netresult1[2] ≈ 8.589058727506838 # z stat, uncorrected
-@test netresult1[3] != 1.0 # sigma
+@test netresult1[3] != 1.0 # sigma: 0.8885233166386386 = |single simulated z|
 hldir = filter!(f -> startswith(f, "jl_"), readdir())
 @test length(hldir) == 1
 @test length(readdir(hldir[1])) == 1
@@ -76,6 +76,12 @@ netresult1 = quarnetGoFtest!(net3,d,true; seed=182, nsim=2, quartetstat=:Qlog);
 Distributed.rmprocs(workers())
 @test netresult1[4] ≈ [.73,.073,.073,.73,.115,.997,.706,.997,1.,.997,.706,1.,1.,.885,.115] rtol=0.01
 @test netresult1[2] ≈ -0.8885233166386386 # z stat, uncorrected
+
+# network that caused a bug in hybrid-Lambda v0.6.2-beta, see
+# https://github.com/hybridLambda/hybrid-Lambda/issues/36
+net = readTopology("(((A:7.13,(B:5.98)#H18:1.15::0.79):0.1,C:7.23):0.07,((D:0.0)#H19:6.2::0.89,(E:5.64,(O:0.0,#H19:0.0::0.11):5.64):0.56):1.1,#H18:1.32::0.21);")
+@test_logs (:warn,r"^The simulated z values") quarnetGoFtest!(net,d,false; seed=419, nsim=5);
+
 end
 
 end

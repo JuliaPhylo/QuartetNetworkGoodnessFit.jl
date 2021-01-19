@@ -232,15 +232,26 @@ function quarnetGoFtest_simulation(net::HybridNetwork, dcf::DataCF, outlierp_fun
         ## solution below: platform specific. Instead, deal with suffix in expectedCF_ordered
         ## run(`sed -i "" 's/_1//g' $gtcu`); # changes individual names like "s5_1" back into "s5"
         treelist = readMultiTopology(gtcu);
+        keepfiles || rm(gtcu) # delete file for replicate irep
         length(treelist) == ngenes || @warn "unexpected number of gene trees, file $gtcu" # sanity check
         obsCF, t = countquartetsintrees(treelist; showprogressbar=verbose)
+        # on 1 replicate only, check that the taxa come in the correct order
         irep == 1 && (taxa == t || error("different order of taxa used by countquartetsintrees"))
         outlierp_fun!(pval, (q.data for q in obsCF), expCF) # calculate outlier p-values
         sim_zval[irep] = quarnetGoFtest(pval)
-        keepfiles || rm(gtcu) # delete file for replicate irep
     end
     keepfiles || rm(hyblamdir) # delete (empty) directory that had output of hybrid-Lambda
-    sigma = sqrt(sum(sim_zval.^2)/nsim) # estimated sigma, assuming mean=0
+    mean_z2 = sum(sim_zval.^2)/nsim
+    sigma = sqrt(mean_z2) # estimated sigma, assuming mean=0
+    # check that the mean z values fit with "true mean z = 0"
+    # if not, would point to a bug: mismatch btw simulated gene trees and expected CFs
+    mean_z = sum(sim_zval)/nsim
+    var_z = mean_z2 - mean_z^2 # 0 if nsim=1
+    abs(mean_z / sqrt(var_z/nsim)) < 4 || nsim==1 || # very conservative: -4 < z-statistic < 4
+        @warn """The simulated z values are far from 0 and they shouldn't:
+        with a mean of $(round(mean_z,digits=4)) and a standard deviation of $(round(sqrt(var_z),digits=4)).
+        The network might be in a form that causes a bug in the hybrid-Lambda simulator
+        (perhaps related to this: https://github.com/hybridLambda/hybrid-Lambda/issues/36)."""
     return sigma, sim_zval
 end
 
