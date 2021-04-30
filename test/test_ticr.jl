@@ -1,7 +1,7 @@
 @testset "testing TICR, Dirichlet distribution" begin
 # previously in PhyloNetworks
 
-df = DataFrame!(CSV.File(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv")));
+df = DataFrame(CSV.File(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv")), copycols=false);
 d = readTableCF(df);
 
 @testset "ticr! on data frame, tree" begin
@@ -23,7 +23,7 @@ result3 = ticr!(net2_1,d,false);
 @test result3[1] ≈ 0.06932031690660927 # p-value, from R
 @test result3[3] == Dict("[0.0, 0.01)"=>2, "[0.01, 0.05)"=>0, "[0.05, 0.1)"=>2, "[0.1, 1.0]"=>11)
 @test result3[4][2] ≈ 54.241562916699216 # pseudo log-lik obtained from R
-@test result3[4][1] ≈ 20.128258663235194 # alpha obtained from R
+@test result3[4][1] ≈ 20.128258663235194 atol=1e-5 # alpha obtained from R
 result3_1 = ticr!(net2_1,d,false; test=:goodness);
 @test result3_1[2] ≈ 25.962962962962965463 # chi-squared statistic obtained from R
 @test result3_1[1] ≈ 9.7092282251534852702e-06 # p-value obtained from R

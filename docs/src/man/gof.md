@@ -13,7 +13,7 @@ proportion of genes estimated to have each 4-taxon unrooted topology.
 
 ```@repl gof
 using QuartetNetworkGoodnessFit, DataFrames, CSV
-qCF = DataFrame!(CSV.File(joinpath(dirname(pathof(QuartetNetworkGoodnessFit)), "..","test","example_qCF_5taxa.csv")));
+qCF = DataFrame(CSV.File(joinpath(dirname(pathof(QuartetNetworkGoodnessFit)), "..","test","example_qCF_5taxa.csv")), copycols=false);
 qCF
 ```
 
@@ -45,7 +45,7 @@ lengths in the network, in coalescent units, before quantifying the
 goodness-of-fit.
 
 ```@repl gof
-res0 = quarnetGoFtest!(net0, qCF, true; seed=234, nsim=2);
+res0 = quarnetGoFtest!(net0, qCF, true; seed=201, nsim=3);
 nothing # hide
 ```
 
@@ -58,7 +58,7 @@ net0 = res0[5]
 Now we re-run the test using the option `false` to not re-optimize
 branch lengths. We use `nsim=200` simulations below to make
 this example faster. For a real data analysis, delete the `nsim` option
-to use the default instead (1000) or specify higher value.
+to use the default instead (1000) or specify a higher value.
 
 ```@repl gof
 res0 = quarnetGoFtest!(net0, qCF, false; seed=234, nsim=200);

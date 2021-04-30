@@ -4,7 +4,3 @@ DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 PhyloNetworks = "33ad39ac-ed31-50eb-9b15-43d0656eaa72"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[compat]
-CSV = "0.7"
-DataFrames = "0.21"
