@@ -1,6 +1,6 @@
 @testset "testing GoF, multinomial distribution" begin
 
-df = DataFrame!(CSV.File(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv")))
+df = DataFrame(CSV.File(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv")), copycols=false)
 d0 = readTableCF(df)
 d = deepcopy(d0)
 net3 = readTopology("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
@@ -63,12 +63,13 @@ Distributed.addprocs(2)
 # start with: julia -p 2 --project
 # or: using Distributed; @everywhere begin; using Pkg; Pkg.activate("."); using PhyloNetworks; end
 @everywhere using QuartetNetworkGoodnessFit
-netresult1 = quarnetGoFtest!(net3,d,false; seed=1456, nsim=5);
+netresult1 = quarnetGoFtest!(net3,d,false; seed=2298, nsim=5);
 @test netresult1[4] ≈ [0.0024449826689709165,0.01496306673600063,0.01496306673600063,0.0024449826689709165,0.04086460431063039,0.9998541057240138,0.1901450501005025,0.8909735618259936,0.9058717147295428,0.8909735618259936,0.1901450501005025,0.9058717147295428,0.9913859984840471,0.3656465603640152,0.04086460431063039]
 @test netresult1[2] ≈ 6.21966321647047 # z stat, uncorrected
 @test netresult1[3] ≈ 3.405362128771355 # sigma
 @test netresult1[6] ≈ vcat(7.4043609719886545, repeat([-0.8885233166386386],4))
-netresult1 = quarnetGoFtest!(net3,d,true; seed=182, nsim=2, quartetstat=:Qlog);
+netresult1 = (@test_logs (:warn, r"far from 0") quarnetGoFtest!(net3,d,true; seed=182, nsim=2, quartetstat=:Qlog));
+# just because 2 simulated z's only, and same values bc tiny network. may break with different RNG
 # note: with verbose=true, we see hybrid-lambda's warnings:
 # WARNING! NOT ULTRAMETRIC!!!
 # WARNING: Gene tree is not ultrametric
