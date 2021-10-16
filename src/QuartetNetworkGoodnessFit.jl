@@ -20,9 +20,7 @@ include("ticr.jl")
 include("quarnetGoF.jl")
 
 # check hybrid-Lambda was downloaded (during build) and define variable hybridlambda
-const depsjl_path = joinpath(
-    dirname(Base.find_package("QuartetNetworkGoodnessFit")),
-    "..", "deps", "deps.jl")
+const depsjl_path = joinpath(@__DIR__, "..", "deps", "deps.jl")
 function sethybridlambdapath(path::String) global hybridlambda = path; end
 warnmsg = """Functions using hybrid-Lambda for simulations will not work. Run:
     using Pkg; Pkg.build("QuartetNetworkGoodnessFit") then restart Julia and try again.

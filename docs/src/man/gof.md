@@ -20,6 +20,7 @@ qCF
 ```@repl gof
 QuartetNetworkGoodnessFit.depsjl_path
 isfile(QuartetNetworkGoodnessFit.depsjl_path)
+include(QuartetNetworkGoodnessFit.depsjl_path)
 get(ENV, "DYLD_LIBRARY_PATH", "")
 QuartetNetworkGoodnessFit.hybridlambda
 isfile(QuartetNetworkGoodnessFit.hybridlambda)
