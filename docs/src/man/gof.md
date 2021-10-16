@@ -17,6 +17,15 @@ qCF = DataFrame(CSV.File(joinpath(dirname(pathof(QuartetNetworkGoodnessFit)), ".
 qCF
 ```
 
+```@repl gof
+QuartetNetworkGoodnessFit.depsjl_path
+isfile(QuartetNetworkGoodnessFit.depsjl_path)
+get(ENV, "DYLD_LIBRARY_PATH", "")
+QuartetNetworkGoodnessFit.hybridlambda
+isfile(QuartetNetworkGoodnessFit.hybridlambda)
+QuartetNetworkGoodnessFit.check_deps()
+```
+
 ## testing candidate networks
 
 Let's say we have two candidate networks to test:
