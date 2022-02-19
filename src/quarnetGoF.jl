@@ -105,8 +105,8 @@ Note that `net` is **not** modified.
 
 - Ruoyi Cai & Cécile Ané (2021).
   Assessing the fit of the multi-species network coalescent to multi-locus data.
-  Bioinformatics,
-  https://doi.org/10.1093/bioinformatics/btaa863
+  Bioinformatics, 37(5):634-641.
+  doi: [10.1093/bioinformatics/btaa863](https://doi.org/10.1093/bioinformatics/btaa863)
 
 - Lorenzen (1995).
   A new family of goodness-of-fit statistics for discrete multivariate data.

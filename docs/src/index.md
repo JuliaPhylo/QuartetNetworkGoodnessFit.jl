@@ -21,7 +21,8 @@ References:
 
 - Ruoyi Cai & Cécile Ané (2021).
   Assessing the fit of the multi-species network coalescent to multi-locus data.
-  [Bioinformatics](https://doi.org/10.1093/bioinformatics/btaa863)
+  [Bioinformatics](https://doi.org/10.1093/bioinformatics/btaa863),
+  37(5):634-641.
 - Noah W. M. Stenz, Bret Larget, David A. Baum, and Cécile Ané (2015).
   Exploring tree-like and non-tree-like patterns using genome sequences:
   An example using the inbreeding plant species *Arabidopsis thaliana* (L.) Heynh. [Systematic Biology](https://doi.org/10.1093/sysbio/syv039), 64(5):809-823.
