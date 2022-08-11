@@ -77,10 +77,6 @@ we get the warning about the simulated z's being far from 0
 @test sort(netresult1[6])[1:4] ≈ repeat([-0.8885233166386386],4)
 netresult1 = (@test_logs (:warn, r"far from 0") quarnetGoFtest!(net3,d,true; seed=182, nsim=2, quartetstat=:Qlog));
 # just because 2 simulated z's only, and same values bc tiny network. may break with different RNG
-# note: with verbose=true, we see hybrid-lambda's warnings:
-# WARNING! NOT ULTRAMETRIC!!!
-# WARNING: Gene tree is not ultrametric
-# ... until hybrid-lambda can accommodate non-time-consistent networks reliably
 Distributed.rmprocs(workers())
 @test netresult1[4] ≈ [.73,.073,.073,.73,.115,.997,.706,.997,1.,.997,.706,1.,1.,.885,.115] rtol=0.01
 @test netresult1[2] ≈ -0.8885233166386386 # z stat, uncorrected

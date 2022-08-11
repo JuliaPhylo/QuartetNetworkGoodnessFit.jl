@@ -105,8 +105,9 @@ This network is found to provide an adequate absolute fit
 
 Note that after optimization of branch lengths and γs
 to best fit the CF data, the network was "ultrametrized" along
-its major tree to adhere to the hybrid-lambda simulator's requirement
-that the network is ultrametric:
+its major tree to assign values to missing edge lengths.
+External edges are typically missing a length in coalescent units
+if there was a single individual sampled per species, for example.
 
 ```@repl gof
 res1[5]
