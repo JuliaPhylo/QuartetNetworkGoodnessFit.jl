@@ -240,12 +240,19 @@ function quarnetGoFtest_simulation(net::HybridNetwork, dcf::DataCF, outlierp_fun
     # if not, would point to a bug: mismatch btw simulated gene trees and expected CFs
     mean_z = sum(sim_zval)/nsim
     var_z = mean_z2 - mean_z^2 # 0 if nsim=1
-    abs(mean_z / sqrt(var_z/nsim)) < 4 || nsim==1 || # very conservative: -4 < z-statistic < 4
-        @warn """The simulated z values are far from 0 and they shouldn't:
-        with a mean of $(round(mean_z,digits=4)) and a standard deviation of $(round(sqrt(var_z),digits=4)).
-        Perhaps you ran very few replicates? Otherwise, the coalescent simulator
-        might have a bug: please open an issue to report it, at
-        https://github.com/cecileane/PhyloCoalSimulations.jl/issues/ ."""
+    abs(mean_z / sqrt(var_z/nsim)) < 4 || nsim==1 || # conservative: -4 < z-statistic < 4
+        @warn """The simulated z values are far from 0: with a mean of $(round(mean_z,digits=4))
+        and a standard deviation of $(round(sqrt(var_z),digits=4)).
+        Perhaps you ran very few simulations for the correction; or have few loci
+        and some quartets with very low discordance? You may want to run many
+        simulations (1000 or more) then calculate an empirical p-value, like this:
+
+        gof = quarnetGoFtest!(your_network, your_data, etc.)
+        zvalue_observed = gof[2]
+        zvalue_bootstrap = sort!(gof[6]) # long vector: sorted z-values simulated under the network
+        using Statistics # if not done earlier: to get access to "mean" function
+        pvalue = mean(zvalue_bootstrap .>= zvalue_observed) # one-sided test: Prob(Z > z)
+        """
     return sigma, sim_zval
 end
 
