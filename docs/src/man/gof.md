@@ -3,7 +3,7 @@ using QuartetNetworkGoodnessFit
 ENV["COLUMNS"] = 85 # displaysize(stdout)[2] is 80 by default
 ```
 
-# Goodness of fit of a candidate network
+# goodness of fit of a candidate network
 
 The example data set in this package is very small (5 taxa)
 on purpose: to make this tutorial run quickly.
@@ -92,12 +92,11 @@ O, E and either A or B are strong outliers (very small outlier p-values).
 
 In fact, the CF data were simulated on `net1`, in which the
 AB clade received gene flow from E.
-(See below if interested in the simulation).
 We can re-run an analysis using `net1` this time:
 
 ```@repl gof
-res1 = quarnetGoFtest!(net1, qCF, true; seed=721, nsim=200);
-res1[[1,2,3]]
+res1 = quarnetGoFtest!(net1, qCF, true; seed=271, nsim=1000);
+res1[[1,2,3]] # p-value, uncorrected z, σ
 ```
 
 This network is found to provide an adequate absolute fit
@@ -105,13 +104,13 @@ This network is found to provide an adequate absolute fit
 
 Note that after optimization of branch lengths and γs
 to best fit the CF data, the network was "ultrametrized" along
-its major tree to adhere to the hybrid-lambda simulator's requirement
-that the network is ultrametric:
+its major tree to assign values to missing edge lengths.
+External edges are typically missing a length in coalescent units
+if there was a single individual sampled per species, for example.
 
 ```@repl gof
 res1[5]
 ```
-
 
 For more options, see [`quarnetGoFtest!`](@ref), such as for
 the outlier test statistic (G or likelihood ratio test by default).
@@ -127,44 +126,29 @@ this can be done by starting julia with the `-p` option:
 julia -p 3 # 3 worker processors, 4 processors total
 ```
 
-To check for progress during the test, we can
-check for a new directory with a name starting with `jl_`,
-such as `jl_0CVOfE` (the end of this name is randomly generated).
-Then we can check the files in this directory: their names are indicative of
-the simulation replicate number that is currently being processed.
-In the example below, there are 3 files in my `jl_0CVOfE` directory
-(because of using 3 workers), and these files show processing
-replicate numbers 106, 440 and 773 (out of the 1000 replicates by default).
-Each contains 200 lines (because it contains 1 gene tree
-per line, since the original data had 200 genes).
-It means that the simulation-based test is at about 1/3 of its way.
-By the way, these files should not be modified. At the end of the
-simulation-based test, these temporary files and folder are automatically
-deleted.
+## empirical p-value
 
-```shell
-$ wc -l jl_0CVOfE/*
-     200 jl_0CVOfE/genetrees_rep106_coal_unit
-     200 jl_0CVOfE/genetrees_rep440_coal_unit
-     200 jl_0CVOfE/genetrees_rep773_coal_unit
+"Nice" networks with long branch lengths in coalescent units lead to "nice"
+expected quartet concordance factors close to [100%, 0%, 0%],
+when gene trees are expected to agree on a good proportion of 4-taxon sets.
+On these networks and data sets with few loci, the distribution of the test
+z-value may be too far from a normal approximation.
+[`quarnetGoFtest!`](@ref) attempts to detect this issue. If it does, it sends
+a warning suggesting to use an empirical p-value instead of using the p-value
+returned by the first element of the output (e.g. `res1[1]`).
+
+Here is example code to calculate the p-value from the empirical distribution
+of simulated z-values. Note that a large number of simulations is needed for
+this. We used `nsim=1000` to test network 1 above, which is a good place to start.
+
+```@repl gof
+zvalue_observed = res1[2]
+zvalue_bootstrap = sort!(res1[6]) # sorted z-values simulated under the network
+length(zvalue_bootstrap) # just to check we ran many simulations
+using Statistics # to access "mean"
+pvalue = mean(zvalue_bootstrap .>= zvalue_observed) # one-sided test: Prob(Z > z)
 ```
 
-## quartet concordance factor simulation
-
-The data in `qCF` were simulated using
-[hybrid-Lambda](https://github.com/hybridLambda/hybrid-Lambda),
-which comes with `QuartetNetworkGoodnessFit`.
-In the code below, hybrid-lambda is called within julia,
-asking for the simulation of 200 genes (`-num 200`).
-
-Note that hybrid-lambda assumes that the tree or network
-is ultrametric, but runs even if this assumption is not met.
-
-```julia
-net1 = readTopology("((((D:0.2,C:0.2):2.4,((A:0.4,B:0.4):1.1)#H1:1.1::0.7):2.0,(#H1:0.0::0.3,E:1.5):3.1):1.0,O:5.6);");
-hl = QuartetNetworkGoodnessFit.hybridlambda # path to hybrid-lambda simulator, on local machine
-net1HL = hybridlambdaformat(net1) # format for the network, to use below by hybrid-lambda
-run(`$hl -spcu "((((D:0.2,C:0.2)I1:2.4,((A:0.4,B:0.4)I2:1.1)H1#0.7:1.1)I3:2.0,(H1#0.7:0.0,E:1.5)I4:3.1)I5:1.0,O:5.6)I6;" -num 200 -seed 123 -o "genetrees"`)
-treelist = readMultiTopology("genetrees_coal_unit")
-obsCF = writeTableCF(countquartetsintrees(treelist)...)
-```
+In this case we get a p-value of 1.0, which is consisten with all individual
+outlier p-values being large, for *all* four-taxon sets as seen earlier:
+the quartet CFs couldn't fit `net1` better.

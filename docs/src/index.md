@@ -13,6 +13,7 @@ For a tutorial, see the manual:
 ```@contents
 Pages = [
     "man/gof.md",
+    "man/simulate.md",
 ]
 Depth = 1
 ```
