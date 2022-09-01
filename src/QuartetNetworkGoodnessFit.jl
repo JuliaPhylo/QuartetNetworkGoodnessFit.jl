@@ -8,15 +8,18 @@ using PhyloNetworks
 using Random: seed!
 using SharedArrays
 using SpecialFunctions: loggamma
+using StaticArrays
 using Statistics: mean, median
 using StatsFuns: normccdf, chisqccdf, betacdf, betaccdf
 
 export
 quarnetGoFtest!,
+network_expectedCF,
 ticr,
 ticr!
 
 include("utils.jl")
+include("quarnetconcordancefactors.jl")
 include("ticr.jl")
 include("quarnetGoF.jl")
 
