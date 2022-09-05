@@ -4,11 +4,12 @@
 Calculate the quartet concordance factors (qCF) expected from the multispecies
 coalescent along network `net`. Output: `(q,t)` where `t` is a list of taxa,
 and `q` is a list of 4-taxon set objects of type `PhyloNetworks.QuartetT{datatype}`.
-In each element of `q`, the `taxonnumber` field gives the indices in `taxa`
-of the 4 taxon of interest; and the `datatype` of the `data` field is a vector
-of static size 3 (for the 3 quartet topologies).
+In each element of `q`, `taxonnumber` gives the indices in `taxa`
+of the 4 taxa of interest; and `data` contains the 3 concordance factors, for the
+3 unrooted topologies in the following order:
+`t1,t2|t3,t4`, `t1,t3|t2,t4` and `t1,t4|t2,t3`.
 This output is similar to that of `PhyloNetworks.countquartetsintrees` when
-if 1 individual = 1 taxon, with 4-taxon sets listed in the same order
+1 individual = 1 taxon, with 4-taxon sets listed in the same order
 (same output `t`, then same order of 4-taxon sets in `q`).
 
 Assumption: the network should have **edge lengths in coalescent units**.
@@ -26,6 +27,11 @@ julia> q,t = network_expectedCF(net); # anomalous: A1, A2, {B1 or B2}, {C or D}
 Calculation quartet CFs for 15 quartets...
 0+---------------+100%
   ***************
+
+julia> show(q[1].taxonnumber)
+[1, 2, 3, 4]
+julia> show(q[1].data)
+[0.8885456713760765, 0.05572716431196175, 0.05572716431196175]
 
 julia> for qi in q
          println(join(t[qi.taxonnumber],",") * ": " * string(round.(qi.data, sigdigits=3)))
