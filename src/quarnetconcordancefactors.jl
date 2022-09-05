@@ -15,17 +15,22 @@ Assumption: the network should have **edge lengths in coalescent units**.
 
 # examples
 ```jldoctest
+julia> using PhyloNetworks
+
 julia> # network with 3_2 cycles, causing some anomalous quartets
        net = readTopology("(D:1,((C:1,#H25:0):0.1,((((B1:10,B2:1):1.5,#H1:0):10.8,((A1:1,A2:1):0.001)#H1:0::0.5):0.5)#H25:0::0.501):1);")
 
 julia> # using PhyloPlots; plot(net, showedgelength=true);
 
 julia> q,t = network_expectedCF(net); # anomalous: A1, A2, {B1 or B2}, {C or D}
+Calculation quartet CFs for 15 quartets...
+0+---------------+100%
+    ***************
 
 julia> for qi in q
-         println(join(t[qi.taxonnumber],",") * ": " * string(qi.data))
+         println(join(t[qi.taxonnumber],",") * ": " * string(round.(qi.data, sigdigits=3)))
        end
-A1,A2,B1,B2: [0.463, 0.268, 0.268]
+A1,A2,B1,B2: [0.889, 0.0557, 0.0557]
 A1,A2,B1,C: [0.168, 0.416, 0.416]
 A1,A2,B2,C: [0.168, 0.416, 0.416]
 A1,B1,B2,C: [0.0372, 0.0372, 0.926]
@@ -34,12 +39,12 @@ A1,A2,B1,D: [0.168, 0.416, 0.416]
 A1,A2,B2,D: [0.168, 0.416, 0.416]
 A1,B1,B2,D: [0.0372, 0.0372, 0.926]
 A2,B1,B2,D: [0.0372, 0.0372, 0.926]
-A1,A2,C,D: [0.697, 0.151, 0.151]
-A1,B1,C,D: [0.798, 0.101, 0.101]
-A2,B1,C,D: [0.798, 0.101, 0.101]
-A1,B2,C,D: [0.798, 0.101, 0.101]
-A2,B2,C,D: [0.798, 0.101, 0.101]
-B1,B2,C,D: [1.0, 9.2e-7, 9.2e-7]
+A1,A2,C,D: [0.69, 0.155, 0.155]
+A1,B1,C,D: [0.793, 0.103, 0.103]
+A2,B1,C,D: [0.793, 0.103, 0.103]
+A1,B2,C,D: [0.793, 0.103, 0.103]
+A2,B2,C,D: [0.793, 0.103, 0.103]
+B1,B2,C,D: [1.0, 9.42e-7, 9.42e-7]
 
 ```
 """
