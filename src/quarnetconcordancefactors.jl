@@ -47,7 +47,7 @@ function network_expectedCF(net::HybridNetwork; showprogressbar=true)
     net.node[net.root].leaf && error("The root can't be a leaf.")
     PhyloNetworks.check_nonmissing_nonnegative_edgelengths(net,
         "Edge lengths are needed in coalescent units to calcualte expected CFs.")
-    all(e.hybrid >= 0.0 for e in net.edge) || error("some γ's are missing for hybrid edges: can't calculate expected CFs.")
+    all(e.gamma >= 0.0 for e in net.edge) || error("some γ's are missing for hybrid edges: can't calculate expected CFs.")
     taxa = sort!(tipLabels(net))
     taxonnumber = Dict(taxa[i] => i for i in eachindex(taxa))
     ntax = length(taxa)
@@ -129,11 +129,17 @@ Assumptions about `net`:
 - edge lengths are non-missing
 - hybrid edge γ's are non-missing
 
-The network is modified as follows: external degree-2 blobs are removed, as
-what's above the LSA. It is then simplified recursively by removing hybrid edges
-for the recursive calculation of qCFs.
+The network is modified as follows: what's above the LSA is removed,
+the 2 edges incident to the root are fused (if the root is of degree 2),
+and external degree-2 blobs are removed. `net` is then simplified recursively
+by removing hybrid edges for the recursive calculation of qCFs.
 """
 function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa)
+    deleteaboveLSA!(net)
+    # make sure the root is of degree 3+
+    if length(net.node[net.root].edge) <= 2
+        PhyloNetworks.fuseedgesat!(net.root, net)
+    end
     # find and delete degree-2 blobs along external edges
     bcc = biconnectedComponents(net, true) # true: ignore trivial blobs
     entry = PhyloNetworks.biconnectedcomponent_entrynodes(net, bcc)
@@ -155,7 +161,6 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa)
             PhyloNetworks.deletehybridedge!(net,he)
         end
     end
-    deleteaboveLSA!(net)
     ndes = 4 # number of taxa descendant from lowest hybrid node
     if net.numHybrids > 0
         preorder!(net)
@@ -217,6 +222,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa)
                                 MVector{3,Float64}(0.0,0.0,1.0-deepcoalprob) ))
     # no coalescence on cut-edge: delete it and extract parental networks
     ispolytomy || PhyloNetworks.shrinkedge!(net, funneledge[1])
+    # shrinkedge! requires PhyloNetworks v0.15.2
     childedge = [e for e in hyb.edge if PhyloNetworks.getParent(e) === hyb]
     length(childedge) == 2 ||
       error("2-taxon subtree, but not 2 child edges after shrinking the cut edge.")

@@ -9,4 +9,5 @@ using Distributed
   include("test_ticr.jl")
   include("test_qnetGoF.jl")
   include("test_utils.jl")
+  include("test_quarnetCFs.jl")
 end
