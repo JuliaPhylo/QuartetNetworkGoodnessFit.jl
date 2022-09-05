@@ -56,11 +56,11 @@ q,t = network_expectedCF(net, showprogressbar=false);
 1-0.3346274115570327-0.5403869133122741 = 0.12498567513069325
 0.3*exp(-1.2)/3 + 0.7*(1-exp(-0.9)*2/3) = 0.5403869133122741
 =#
-# h=2: 4-cycle + 3_2-cycle within; unrooted
-net = readTopology("(D:0,((C:0,((B:100,#H25:100):0.01)#H22:0.01::0.8):0.05,#H22:0.2):2,(A:0)#H25:100::0.7);")
+# h=2: 4-cycle + 3_2-cycle within; unrooted; 2-cycle along external edge
+net = readTopology("(D:0,((((C:0)#H1:0::0.9,#H1:0):0,((B:100,#H25:100):0.01)#H22:0.01::0.8):0.05,#H22:0.2):2,(A:0)#H25:100::0.7);")
 q,t = network_expectedCF(net, showprogressbar=false);
 @test qCFstring(q,t) == "A,B,C,D: [0.1335, 0.1288, 0.7377]"
-net.edge[7].length = 2.0 # was 0.05, within the 3_2 cycle, causing an anomaly
+net.edge[10].length = 2.0 # was 0.05, within the 3_2 cycle, causing an anomaly
 q,t = network_expectedCF(net, showprogressbar=false);
 @test qCFstring(q,t) == "A,B,C,D: [0.08703, 0.1211, 0.7919]"
 end

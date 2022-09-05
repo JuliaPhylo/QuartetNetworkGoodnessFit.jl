@@ -15,10 +15,10 @@ Assumption: the network should have **edge lengths in coalescent units**.
 
 # examples
 ```jldoctest
-julia> using PhyloNetworks
+julia> using PhyloNetworks, QuartetNetworkGoodnessFit
 
 julia> # network with 3_2 cycles, causing some anomalous quartets
-       net = readTopology("(D:1,((C:1,#H25:0):0.1,((((B1:10,B2:1):1.5,#H1:0):10.8,((A1:1,A2:1):0.001)#H1:0::0.5):0.5)#H25:0::0.501):1);")
+       net = readTopology("(D:1,((C:1,#H25:0):0.1,((((B1:10,B2:1):1.5,#H1:0):10.8,((A1:1,A2:1):0.001)#H1:0::0.5):0.5)#H25:0::0.501):1);");
 
 julia> # using PhyloPlots; plot(net, showedgelength=true);
 
