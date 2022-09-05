@@ -25,7 +25,7 @@ julia> # using PhyloPlots; plot(net, showedgelength=true);
 julia> q,t = network_expectedCF(net); # anomalous: A1, A2, {B1 or B2}, {C or D}
 Calculation quartet CFs for 15 quartets...
 0+---------------+100%
-    ***************
+  ***************
 
 julia> for qi in q
          println(join(t[qi.taxonnumber],",") * ": " * string(round.(qi.data, sigdigits=3)))
