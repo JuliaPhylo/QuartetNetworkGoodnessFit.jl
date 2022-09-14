@@ -3,7 +3,7 @@ using QuartetNetworkGoodnessFit
 ENV["COLUMNS"] = 85 # displaysize(stdout)[2] is 80 by default
 ```
 
-# goodness of fit of a candidate network
+# [goodness of fit of a candidate network](@id goodness_of_fit_1)
 
 The example data set in this package is very small (5 taxa)
 on purpose: to make this tutorial run quickly.

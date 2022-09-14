@@ -26,7 +26,7 @@ df = writeTableCF(obsCF, t)
     (see [Allman, Baños & Rhodes 2022](https://doi.org/10.1109/TCBB.2022.3177956))
     but this section may still be of interest to some and is left for completeness.
 
-The example `qCF` data used [earlier](gof.html) were originally simulated as
+The example `qCF` data used [earlier](@ref goodness_of_fit_1) were originally simulated as
 shown below using [hybrid-Lambda](https://github.com/hybridLambda/hybrid-Lambda),
 which comes with version v0.3 of `QuartetNetworkGoodnessFit`
 but not with later versions.
