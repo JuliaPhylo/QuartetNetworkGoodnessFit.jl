@@ -99,7 +99,7 @@ function network_expectedCF(net::HybridNetwork; showprogressbar=true)
 end
 
 """
-    network_expectedCF_4taxa!(quartet::QuartetT, net::HybridNetwork, taxa, taxonnumber)
+    network_expectedCF!(quartet::QuartetT, net::HybridNetwork, taxa, taxonnumber)
 
 Update `quartet.data` to contain the quartet concordance factors expected from
 the multispecies coalescent along network `net` for the 4-taxon set `taxa[quartet.taxonnumber]`.
