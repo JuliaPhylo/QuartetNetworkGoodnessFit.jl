@@ -14,6 +14,7 @@ For a tutorial, see the manual:
 Pages = [
     "man/gof.md",
     "man/simulate.md",
+    "man/expected_qCFs.md",
 ]
 Depth = 1
 ```

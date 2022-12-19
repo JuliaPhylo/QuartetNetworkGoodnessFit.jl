@@ -13,6 +13,7 @@ makedocs(
         "manual" => [
             "goodness of fit" => "man/gof.md",
             "simulating quartet concordance factors" => "man/simulate.md",
+            "expected concordance factors" => "man/expected_qCFs.md"
         ],
         "library" => [
             "public" => "lib/public.md",
