@@ -7,6 +7,8 @@ net3 = readTopology("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(
 
 @testset "using Pearson statistic" begin
 # without optimizing branch lengths
+# output is type-unstable: last item in tuple is either nothing of SharedVector (z-values)
+# @code_warntype quarnetGoFtest!(net3,df,false; quartetstat=:pearson, correction=:none)
 netresult1 = quarnetGoFtest!(net3,df,false; quartetstat=:pearson, correction=:none);
 @test length(netresult1) == 6
 @test netresult1[2] ≈ 8.589058727506838  # z stat

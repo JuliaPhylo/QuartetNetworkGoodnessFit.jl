@@ -1,5 +1,6 @@
 """
-    network_expectedCF(net::HybridNetwork; showprogressbar=true)
+    network_expectedCF(net::HybridNetwork; showprogressbar=true,
+            inheritancecorrelation=0)
 
 Calculate the quartet concordance factors (qCF) expected from the multispecies
 coalescent along network `net`. Output: `(q,t)` where `t` is a list of taxa,
@@ -13,6 +14,17 @@ This output is similar to that of `PhyloNetworks.countquartetsintrees` when
 (same output `t`, then same order of 4-taxon sets in `q`).
 
 Assumption: the network should have **edge lengths in coalescent units**.
+
+By default, lineages at a hybrid node come from a parent (chosen according
+to inheritance probabilities γ) *independently* across lineages.
+With option `inheritancecorrelation > 0`, lineages have positive dependence,
+e.g. to model locus-specific inheritance probabilities, randomly drawn from a
+Beta distribution with mean γ across all loci. If `inheritancecorrelation` is
+set to 1, then all lineages at a given locus inherit from the same
+(randomly sampled) parent. More generally, the lineages' parents
+are distributed according to a Dirichlet process with base distribution determined
+by the γ values, and with concentration parameter α = (1-r)/r, that is, r = 1/(1+α),
+where `r` is the input inheritance correlation.
 
 # examples
 ```jldoctest
@@ -54,11 +66,14 @@ B1,B2,C,D: [1.0, 9.42e-7, 9.42e-7]
 
 ```
 """
-function network_expectedCF(net::HybridNetwork; showprogressbar=true)
+function network_expectedCF(net::HybridNetwork; showprogressbar=true,
+            inheritancecorrelation=0)
     net.node[net.root].leaf && error("The root can't be a leaf.")
     PhyloNetworks.check_nonmissing_nonnegative_edgelengths(net,
         "Edge lengths are needed in coalescent units to calcualte expected CFs.")
     all(e.gamma >= 0.0 for e in net.edge) || error("some γ's are missing for hybrid edges: can't calculate expected CFs.")
+    inheritancecorrelation >= 0 || error("the inheritance correlation should be non-negative")
+    inheritancecorrelation <= 1 || error("the inheritance correlation should be <= 1")
     taxa = sort!(tipLabels(net))
     taxonnumber = Dict(taxa[i] => i for i in eachindex(taxa))
     ntax = length(taxa)
@@ -87,7 +102,7 @@ function network_expectedCF(net::HybridNetwork; showprogressbar=true)
         nextstar = Integer(ceil(nquarnets_perstar))
     end
     for qi in 1:numq
-        network_expectedCF!(quartet[qi], net, taxa, taxonnumber)
+        network_expectedCF!(quartet[qi], net, taxa, taxonnumber, inheritancecorrelation)
         if showprogressbar && qi >= nextstar
             print("*")
             stars += 1
@@ -99,7 +114,8 @@ function network_expectedCF(net::HybridNetwork; showprogressbar=true)
 end
 
 """
-    network_expectedCF!(quartet::QuartetT, net::HybridNetwork, taxa, taxonnumber)
+    network_expectedCF!(quartet::QuartetT, net::HybridNetwork, taxa, taxonnumber,
+            inheritancecorrelation)
 
 Update `quartet.data` to contain the quartet concordance factors expected from
 the multispecies coalescent along network `net` for the 4-taxon set `taxa[quartet.taxonnumber]`.
@@ -108,9 +124,13 @@ indices in `taxa` of the 4 taxa of interest. `taxonnumber` should be a dictionar
 mapping taxon labels in to their indices in `taxa`, for easier lookup.
 
 `net` is not modified.
+
+For `inheritancecorrelation` see [`network_expectedCF`](@ref).
+Its value should be between 0 and 1 (not checked by this internal function).
 """
 function network_expectedCF!(quartet::PhyloNetworks.QuartetT{MVector{3,Float64}},
-                             net::HybridNetwork, taxa, taxonnumber)
+                             net::HybridNetwork, taxa, taxonnumber,
+                             inheritancecorrelation)
     net = deepcopy(net)
     PhyloNetworks.removedegree2nodes!(net)
     # delete all taxa except for the 4 in the quartet
@@ -119,13 +139,13 @@ function network_expectedCF!(quartet::PhyloNetworks.QuartetT{MVector{3,Float64}}
         deleteleaf!(net, taxon, simplify=false, unroot=false)
         # would like unroot=true but deleteleaf! throws an error when the root is connected to 2 outgoing hybrid edges
     end
-    quartet.data .= network_expectedCF_4taxa!(net, taxa[quartet.taxonnumber])
+    quartet.data .= network_expectedCF_4taxa!(net, taxa[quartet.taxonnumber], inheritancecorrelation)
     # for i in 1:3 quartet.data[i] = qCF[i]; end
     return quartet
 end
 
 """
-    network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa)
+    network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorrelation)
 
 Return the quartet concordance factors expected from the multispecies coalescent
 along network `net`, where the 3 quartet topologies are ordered following the
@@ -144,8 +164,11 @@ The network is modified as follows: what's above the LSA is removed,
 the 2 edges incident to the root are fused (if the root is of degree 2),
 and external degree-2 blobs are removed. `net` is then simplified recursively
 by removing hybrid edges for the recursive calculation of qCFs.
+
+For `inheritancecorrelation` see [`network_expectedCF`](@ref).
+Its value should be between 0 and 1 (not checked by this internal function).
 """
-function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa)
+function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorrelation)
     deleteaboveLSA!(net)
     # make sure the root is of degree 3+
     if length(net.node[net.root].edge) <= 2
@@ -188,6 +211,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa)
         ndes > 2 && n2.leaf && error("2+ descendants below the lowest hybrid, yet n2 is a leaf. taxa: $(fourtaxa)")
     end
     if ndes > 2 # simple formula for qCF: find cut edge and its length
+        # inheritance correlation has no impact
         # pool of cut edges below. contains NO external edge, bc n2 not leaf (if reticulation), nice tree ow
         cutpool = (net.numHybrids == 0 ? net.edge :
                     [e for e in n2.edge if PhyloNetworks.getParent(e) === n2])
@@ -216,6 +240,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa)
     parenthnumber = [p.number for p in parenthedge]
     nhe = length(parenthedge)
     if ndes == 1 # weighted qCFs average of the nhe (often = 2) displayed networks
+        # inheritance correlation has no impact
         for i in 1:nhe # keep parenthedge[i], remove all others
             gamma = parenthedge[i].gamma
             simplernet = ( i < nhe ? deepcopy(net) : net ) # last case: to save memory allocation
@@ -225,12 +250,14 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa)
                 PhyloNetworks.deletehybridedge!(simplernet, simplernet.edge[pe_index],
                     false,true,false,false,false) # ., unroot=true, ., simplify=false,.
             end
-            qCF .+= gamma .* network_expectedCF_4taxa!(simplernet, fourtaxa)
+            qCF .+= gamma .* network_expectedCF_4taxa!(simplernet, fourtaxa, inheritancecorrelation)
         end
         return qCF
     end
     # by now: 2 descendant below the lowest hybrid node: hardest case
-    # weighted qCFs average of 3 networks: 2 displayed, 1 "parental"
+    # weighted qCFs average of 3 networks: 2 displayed, 1 "parental" (unless same parents)
+    sameparents = (inheritancecorrelation == 1)
+    oneminusrho = 1 - inheritancecorrelation
     hwc = hardwiredCluster(parenthedge[1], fourtaxa)
     sistertofirst = findnext(x -> x == hwc[1], hwc, 2)
     internallength = ( ispolytomy ? 0.0 : funneledge[1].length)
@@ -250,7 +277,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa)
     childnumber = [e.number for e in childedge]
     for i in 1:nhe
       weighti = deepcoalprob * parenthedge[i].gamma
-      for j in 1:i
+      for j in (sameparents ? i : 1):i # if inheritancecorrelation=1 then i!=j has probability 0
         gammaj = parenthedge[j].gamma
         simplernet = ( i < nhe || j < nhe ? deepcopy(net) : net )
         # delete all hybedges other than i & j
@@ -276,13 +303,15 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa)
             PhyloNetworks.deletehybridedge!(simplernet, pej,
                 false,true,false,false,false) # ., unroot=true,., simplify=false,.)
         end
-        qCF_subnet = network_expectedCF_4taxa!(simplernet, fourtaxa)
+        qCF_subnet = network_expectedCF_4taxa!(simplernet, fourtaxa, inheritancecorrelation)
         if i == j
-            qCF .+= (weighti * gammaj) .* qCF_subnet
+            prob = weighti * (gammaj * oneminusrho + inheritancecorrelation)
+            qCF .+= prob .* qCF_subnet
         else # add subnetwork with flipped assignment of the 2 taxa to parents i & j
             flipped_ij = (sistertofirst == 2 ? [1,3,2] :
                          (sistertofirst == 3 ? [3,2,1] : [2,1,3] ))
-            qCF .+= (weighti * gammaj) .* (qCF_subnet .+ qCF_subnet[flipped_ij])
+            prob = weighti * gammaj * oneminusrho
+            qCF .+= prob .* (qCF_subnet .+ qCF_subnet[flipped_ij])
         end
       end
     end

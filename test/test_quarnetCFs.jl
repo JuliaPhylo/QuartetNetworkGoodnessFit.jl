@@ -5,6 +5,7 @@ qCFstring(qlist,taxa) = join([join(taxa[q.taxonnumber],",") * ": " * string(roun
 @testset "tree-like quartets, some anomalous" begin
 # 4 taxa only
 net = readTopology("((D:1.1,#H25:0.0):2,((((C:0.5)#H1:0.1::0.9,(#H1:0,B:0.5):0.1):0.1)#H25:0.0::0.5,A:1.1):2);")
+# @code_warntype network_expectedCF(net, showprogressbar=false) # no red, no Union
 q,t = network_expectedCF(net, showprogressbar=false);
 @test qCFstring(q,t) == "A,B,C,D: [0.3721, 0.3721, 0.2559]"
 #= manual calculation: major CF for AD|BC = 0.25588020130713734 from
@@ -44,7 +45,7 @@ AiBj|CD: 0.5*(1-exp(-0.5) + 1-exp(-11.3)) + 0.5*(exp(-0.5)+exp(-11.3))*(0.6*0.6*
 
 # 5 taxa, external 2-blob at the root for A1,A4,A5,B3
 net = readTopology("(((A4:0.5,A5:0.5)a3:1.2,A1:2.9)aa:2.0,(((B3:1.6)#H6:0.3::0.7,B6:1.5)b4:0.4,#H6:0.53::0.3)bb:2.5)r;")
-q,t = network_expectedCF(net); # anomalous: A1, A2, {B1 or B2}, {C or D}
+q,t = network_expectedCF(net);
 @test t == ["A1","A4","A5","B3","B6"]
 @test qCFstring(q,t) == """
 A1,A4,A5,B3: [0.1004, 0.1004, 0.7992]
@@ -76,6 +77,18 @@ q,t = network_expectedCF(net, showprogressbar=false);
 net.edge[10].length = 2.0 # was 0.05, within the 3_2 cycle, causing an anomaly
 q,t = network_expectedCF(net, showprogressbar=false);
 @test qCFstring(q,t) == "A,B,C,D: [0.08703, 0.1211, 0.7919]"
+end
+
+@testset "with inheritance correlation" begin
+# same network as above: h=2, 3_2 cycle within 4-cycle, unrooted, external 2-cycle, long edge 10
+net = readTopology("(D:0,((((C:0)#H1:0::0.9,#H1:0):0,((B:100,#H25:100):0.01)#H22:0.01::0.8):2,#H22:0.2):2,(A:0)#H25:100::0.7);")
+# still anomalous with correlation = 0.5
+q,t = network_expectedCF(net, showprogressbar=false, inheritancecorrelation=0.1);
+@test qCFstring(q,t) == "A,B,C,D: [0.09037, 0.1194, 0.7902]"
+q,t = network_expectedCF(net, showprogressbar=false, inheritancecorrelation=0.5);
+@test qCFstring(q,t) == "A,B,C,D: [0.1038, 0.1127, 0.7835]"
+q,t = network_expectedCF(net, showprogressbar=false, inheritancecorrelation=1);
+@test qCFstring(q,t) == "A,B,C,D: [0.1205, 0.1044, 0.7752]"
 end
 
 end
