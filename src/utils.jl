@@ -35,8 +35,8 @@ function ultrametrize!(net::HybridNetwork, verbose::Bool)
     dr[1] = 0.0 # root
     for i in 2:length(net.nodes_changed) # pre-order
         @inbounds n = net.nodes_changed[i]
-        e = PhyloNetworks.getMajorParentEdge(n)
-        p = PhyloNetworks.getParent(e)
+        e = getparentedge(n)
+        p = getparent(e)
         pi = findfirst(x -> x===p, net.nodes_changed)
         drmaj = dr[pi]    # distance to root of major parent
         if !n.hybrid # n is a tree node. only 1 parent edge: e
@@ -47,8 +47,8 @@ function ultrametrize!(net::HybridNetwork, verbose::Bool)
             continue
         end
         # now: n is a hybrid node, with parent edges e and emin
-        emin = PhyloNetworks.getMinorParentEdge(n)
-        pmin = PhyloNetworks.getParent(emin)
+        emin = getparentedgeminor(n)
+        pmin = getparent(emin)
         pmini = findfirst(x -> x===pmin, net.nodes_changed)
         drmin = dr[pmini] # distance to root of minor parent
         majmissing = e.length == -1.0
@@ -101,7 +101,7 @@ function ultrametrize!(net::HybridNetwork, verbose::Bool)
     for i in 2:length(net.nodes_changed)
         @inbounds n = net.nodes_changed[i]
         n.leaf || continue
-        e = PhyloNetworks.getMajorParentEdge(n)
+        e = getparentedge(n)
         if e.length == -1.0
             e.length = height - dr[i]
         elseif !isapprox(dr[i], height)

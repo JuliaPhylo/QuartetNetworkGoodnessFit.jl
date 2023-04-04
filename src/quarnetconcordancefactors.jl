@@ -183,7 +183,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
     function isexternal(ib) # is bcc[ib] of degree 2 and adjacent to an external edge?
         # yes if: 1 single exit adjacent to a leaf
         length(exitnodes[ib]) != 1 && return false
-        ch = PhyloNetworks.getChildren(exitnodes[ib][1])
+        ch = getchildren(exitnodes[ib][1])
         return length(ch) == 1 && ch[1].leaf
     end
     for ib in reverse(bloborder)
@@ -203,19 +203,19 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
         preorder!(net)
         # find a lowest hybrid node and # of taxa below it
         hyb = net.nodes_changed[findlast(n -> n.hybrid, net.nodes_changed)]
-        funneledge = [e for e in hyb.edge if PhyloNetworks.getParent(e) === hyb]
+        funneledge = [e for e in hyb.edge if getparent(e) === hyb]
         ispolytomy = length(funneledge) > 1
         funneldescendants = union([PhyloNetworks.descendants(e) for e in funneledge]...)
         ndes = length(funneldescendants)
-        n2 = (ispolytomy ? hyb : PhyloNetworks.getChild(funneledge[1]))
+        n2 = (ispolytomy ? hyb : getchild(funneledge[1]))
         ndes > 2 && n2.leaf && error("2+ descendants below the lowest hybrid, yet n2 is a leaf. taxa: $(fourtaxa)")
     end
     if ndes > 2 # simple formula for qCF: find cut edge and its length
         # inheritance correlation has no impact
         # pool of cut edges below. contains NO external edge, bc n2 not leaf (if reticulation), nice tree ow
         cutpool = (net.numHybrids == 0 ? net.edge :
-                    [e for e in n2.edge if PhyloNetworks.getParent(e) === n2])
-        filter!(e -> !PhyloNetworks.getChild(e).leaf, cutpool)
+                    [e for e in n2.edge if getparent(e) === n2])
+        filter!(e -> !getchild(e).leaf, cutpool)
         net.numHybrids > 0 || length(cutpool) <= 1 ||
             error("2+ cut edges, yet 4-taxon tree, degree-3 root and no degree-2 nodes. taxa: $(fourtaxa)")
         sistertofirst = 2    # arbitrarily correct if 3-way polytomy (no cut edge)
@@ -235,7 +235,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
     ndes > 0 || error("weird: hybrid node has no descendant taxa")
     # by now, there are 1 or 2 taxa below the lowest hybrid
     qCF = MVector{3,Float64}(0.0,0.0,0.0) # mutated later
-    parenthedge = [e for e in hyb.edge if PhyloNetworks.getChild(e) === hyb]
+    parenthedge = [e for e in hyb.edge if getchild(e) === hyb]
     all(h.hybrid for h in parenthedge) || error("hybrid $(hyb.number) has a parent edge that's a tree edge")
     parenthnumber = [p.number for p in parenthedge]
     nhe = length(parenthedge)
@@ -269,10 +269,10 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
     # no coalescence on cut-edge: delete it and extract parental networks
     ispolytomy || PhyloNetworks.shrinkedge!(net, funneledge[1])
     # shrinkedge! requires PhyloNetworks v0.15.2
-    childedge = [e for e in hyb.edge if PhyloNetworks.getParent(e) === hyb]
+    childedge = [e for e in hyb.edge if getparent(e) === hyb]
     length(childedge) == 2 ||
       error("2-taxon subtree, but not 2 child edges after shrinking the cut edge.")
-    all(PhyloNetworks.getChild(e).leaf for e in childedge) ||
+    all(getchild(e).leaf for e in childedge) ||
       error("2-taxon subtree, cut-edge shrunk, but the 2 edges aren't both external")
     childnumber = [e.number for e in childedge]
     for i in 1:nhe
@@ -291,8 +291,8 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
             # detach childedge[2] from hyb and attach it to hyb's parent j
             pej_index = findfirst(e -> e.number == parenthnumber[j], simplernet.edge)
             pej = simplernet.edge[pej_index]
-            pn = PhyloNetworks.getParent(pej)
-            hn = PhyloNetworks.getChild(pej) # hyb node, but in simplernet
+            pn = getparent(pej)
+            hn = getchild(pej) # hyb node, but in simplernet
             ce2_index = findfirst(e -> e.number == childnumber[2], simplernet.edge)
             ce2 = simplernet.edge[ce2_index]
             PhyloNetworks.removeEdge!(hn,ce2)

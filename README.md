@@ -4,7 +4,8 @@
 
 ## overview
 
-`QuartetNetworkGoodnessFit` is a Julia package, providing tools to measure the
+`QuartetNetworkGoodnessFit` is a Julia package for phylogenetic networks analyses using four-taxon subsets.
+It includes tools to measure the
 goodness of fit of a phylogenetic network to data on subsets of 4 tips.
 It depends on the [PhyloNetworks](https://github.com/crsl4/PhyloNetworks.jl)
 package.

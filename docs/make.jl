@@ -4,7 +4,7 @@ using QuartetNetworkGoodnessFit
 DocMeta.setdocmeta!(QuartetNetworkGoodnessFit, :DocTestSetup, :(using QuartetNetworkGoodnessFit); recursive=true)
 
 makedocs(
-    sitename = "QuartetNetwork GoF.jl",
+    sitename = "QGoF",
     authors = "Cécile Ané and Ruoyi Cai",
     format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"), # easier local build
     modules = [QuartetNetworkGoodnessFit],
