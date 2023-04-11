@@ -12,6 +12,8 @@ using StaticArrays
 using Statistics: mean, median
 using StatsFuns: normccdf, chisqccdf, betacdf, betaccdf
 
+const PN = PhyloNetworks # for easier use of internals
+
 export
 quarnetGoFtest!,
 network_expectedCF,

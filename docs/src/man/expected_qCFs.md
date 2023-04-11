@@ -34,15 +34,7 @@ listed to the left.
 We can also convert our list to a data frame:
 ```@repl expcf
 using DataFrames
-df = DataFrame(
-    t1 = [t[q.taxonnumber[1]] for q in eCFs],
-    t2 = [t[q.taxonnumber[2]] for q in eCFs],
-    t3 = [t[q.taxonnumber[3]] for q in eCFs],
-    t4 = [t[q.taxonnumber[4]] for q in eCFs],
-    CF12_34 = [q.data[1] for q in eCFs],
-    CF13_24 = [q.data[2] for q in eCFs],
-    CF14_23 = [q.data[3] for q in eCFs],
-)
+df = writeTableCF(eCFs, t) # requires PhyloNetworks v0.16.1
 ```
 
 If we wanted to compare with the observed frequency among 100 gene trees,
@@ -50,9 +42,10 @@ we could use data frame manipulations to join the two data frames:
 
 ```@repl expcf
 using PhyloCoalSimulations
-genetrees = simulatecoalescent(net, 100, 1); # 1000 genes, 1 individual / pop
+genetrees = simulatecoalescent(net, 100, 1); # 100 genes, 1 individual / pop
 df_sim = writeTableCF(countquartetsintrees(genetrees; showprogressbar=false)...);
 first(df_sim, 2)
-select!(df_sim, Not(:ngenes)); # delete column with number of genes
-df_both = outerjoin(df, df_sim; on=[:t1,:t2,:t3,:t4], renamecols = "exact" => "sim")
+select!(df_sim, Not([:qind,:ngenes])); # delete columns with q index and number of genes
+df_both = outerjoin(select(df, Not(:qind)), df_sim;
+        on=[:t1,:t2,:t3,:t4], renamecols = "exact" => "sim")
 ```

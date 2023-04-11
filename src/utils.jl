@@ -131,7 +131,7 @@ function reroot!(net, refnet)
         try
             directEdges!(net)
         catch e
-            isa(e, PhyloNetworks.RootMismatch) || rethrow(e)
+            isa(e, PN.RootMismatch) || rethrow(e)
             continue
         end
         # now, i is admissible: internal and compatible with direction

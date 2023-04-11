@@ -69,7 +69,7 @@ B1,B2,C,D: [1.0, 9.42e-7, 9.42e-7]
 function network_expectedCF(net::HybridNetwork; showprogressbar=true,
             inheritancecorrelation=0)
     net.node[net.root].leaf && error("The root can't be a leaf.")
-    PhyloNetworks.check_nonmissing_nonnegative_edgelengths(net,
+    PN.check_nonmissing_nonnegative_edgelengths(net,
         "Edge lengths are needed in coalescent units to calcualte expected CFs.")
     all(e.gamma >= 0.0 for e in net.edge) || error("some γ's are missing for hybrid edges: can't calculate expected CFs.")
     inheritancecorrelation >= 0 || error("the inheritance correlation should be non-negative")
@@ -77,13 +77,13 @@ function network_expectedCF(net::HybridNetwork; showprogressbar=true,
     taxa = sort!(tipLabels(net))
     taxonnumber = Dict(taxa[i] => i for i in eachindex(taxa))
     ntax = length(taxa)
-    nCk = PhyloNetworks.nchoose1234(ntax) # matrix to rank 4-taxon sets
+    nCk = PN.nchoose1234(ntax) # matrix to rank 4-taxon sets
     qtype = MVector{3,Float64} # 3 floats: CF12_34, CF13_24, CF14_23; initialized at 0.0
     numq = nCk[ntax+1,4]
-    quartet = Vector{PhyloNetworks.QuartetT{qtype}}(undef, numq)
+    quartet = Vector{PN.QuartetT{qtype}}(undef, numq)
     ts = [1,2,3,4]
     for qi in 1:numq
-        quartet[qi] = PhyloNetworks.QuartetT(qi, SVector{4}(ts), MVector(0.,0.,0.))
+        quartet[qi] = PN.QuartetT(qi, SVector{4}(ts), MVector(0.,0.,0.))
         # next: find the 4-taxon set with the next rank,
         #       faster than using the direct mapping function
         ind = findfirst(x -> x>1, diff(ts))
@@ -128,11 +128,11 @@ mapping taxon labels in to their indices in `taxa`, for easier lookup.
 For `inheritancecorrelation` see [`network_expectedCF`](@ref).
 Its value should be between 0 and 1 (not checked by this internal function).
 """
-function network_expectedCF!(quartet::PhyloNetworks.QuartetT{MVector{3,Float64}},
+function network_expectedCF!(quartet::PN.QuartetT{MVector{3,Float64}},
                              net::HybridNetwork, taxa, taxonnumber,
                              inheritancecorrelation)
     net = deepcopy(net)
-    PhyloNetworks.removedegree2nodes!(net)
+    PN.removedegree2nodes!(net)
     # delete all taxa except for the 4 in the quartet
     for taxon in taxa
         taxonnumber[taxon] in quartet.taxonnumber && continue
@@ -172,13 +172,13 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
     deleteaboveLSA!(net)
     # make sure the root is of degree 3+
     if length(net.node[net.root].edge) <= 2
-        PhyloNetworks.fuseedgesat!(net.root, net)
+        PN.fuseedgesat!(net.root, net)
     end
     # find and delete degree-2 blobs along external edges
     bcc = biconnectedComponents(net, true) # true: ignore trivial blobs
-    entry = PhyloNetworks.biconnectedcomponent_entrynodes(net, bcc)
+    entry = PN.biconnectedcomponent_entrynodes(net, bcc)
     entryindex = indexin(entry, net.nodes_changed)
-    exitnodes = PhyloNetworks.biconnectedcomponent_exitnodes(net, bcc, false) # don't redo the preordering
+    exitnodes = PN.biconnectedcomponent_exitnodes(net, bcc, false) # don't redo the preordering
     bloborder = sortperm(entryindex) # pre-ordering for blobs in their own blob tree
     function isexternal(ib) # is bcc[ib] of degree 2 and adjacent to an external edge?
         # yes if: 1 single exit adjacent to a leaf
@@ -195,7 +195,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
             # delete minor hybrid edge with options unroot=true: to make sure the
             # root remains of degree 3+, in case a degree-2 blob starts at the root
             # simplify=true: bc external blob
-            PhyloNetworks.deletehybridedge!(net,he, false,true,false,true,false)
+            PN.deletehybridedge!(net,he, false,true,false,true,false)
         end
     end
     ndes = 4 # number of taxa descendant from lowest hybrid node
@@ -205,7 +205,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
         hyb = net.nodes_changed[findlast(n -> n.hybrid, net.nodes_changed)]
         funneledge = [e for e in hyb.edge if getparent(e) === hyb]
         ispolytomy = length(funneledge) > 1
-        funneldescendants = union([PhyloNetworks.descendants(e) for e in funneledge]...)
+        funneldescendants = union([PN.descendants(e) for e in funneledge]...)
         ndes = length(funneldescendants)
         n2 = (ispolytomy ? hyb : getchild(funneledge[1]))
         ndes > 2 && n2.leaf && error("2+ descendants below the lowest hybrid, yet n2 is a leaf. taxa: $(fourtaxa)")
@@ -247,7 +247,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
             for j in 1:nhe
                 j == i && continue # don't delete hybrid edge i!
                 pe_index = findfirst(e -> e.number == parenthnumber[j], simplernet.edge)
-                PhyloNetworks.deletehybridedge!(simplernet, simplernet.edge[pe_index],
+                PN.deletehybridedge!(simplernet, simplernet.edge[pe_index],
                     false,true,false,false,false) # ., unroot=true, ., simplify=false,.
             end
             qCF .+= gamma .* network_expectedCF_4taxa!(simplernet, fourtaxa, inheritancecorrelation)
@@ -267,7 +267,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
           (sistertofirst == 3 ? MVector{3,Float64}(0.0,1.0-deepcoalprob,0.0) :
                                 MVector{3,Float64}(0.0,0.0,1.0-deepcoalprob) ))
     # no coalescence on cut-edge: delete it and extract parental networks
-    ispolytomy || PhyloNetworks.shrinkedge!(net, funneledge[1])
+    ispolytomy || PN.shrinkedge!(net, funneledge[1])
     # shrinkedge! requires PhyloNetworks v0.15.2
     childedge = [e for e in hyb.edge if getparent(e) === hyb]
     length(childedge) == 2 ||
@@ -284,7 +284,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
         for k in 1:nhe
             (k == i || k ==j) && continue # don't delete hybrid edges i or j
             pe_index = findfirst(e -> e.number == parenthnumber[k], simplernet.edge)
-            PhyloNetworks.deletehybridedge!(simplernet, simplernet.edge[pe_index],
+            PN.deletehybridedge!(simplernet, simplernet.edge[pe_index],
                 false,true,false,false,false) # ., unroot=true,., simplify=false,.
         end
         if i != j
@@ -295,12 +295,12 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
             hn = getchild(pej) # hyb node, but in simplernet
             ce2_index = findfirst(e -> e.number == childnumber[2], simplernet.edge)
             ce2 = simplernet.edge[ce2_index]
-            PhyloNetworks.removeEdge!(hn,ce2)
+            PN.removeEdge!(hn,ce2)
             hn_index = findfirst(x -> x === hn, ce2.node)
             ce2.node[hn_index] = pn # ce2.isChild1 remains synchronized
             push!(pn.edge, ce2)
             # then delete hybedge j
-            PhyloNetworks.deletehybridedge!(simplernet, pej,
+            PN.deletehybridedge!(simplernet, pej,
                 false,true,false,false,false) # ., unroot=true,., simplify=false,.)
         end
         qCF_subnet = network_expectedCF_4taxa!(simplernet, fourtaxa, inheritancecorrelation)

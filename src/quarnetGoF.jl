@@ -274,18 +274,18 @@ function expectedCF_ordered(dcf::DataCF, net::HybridNetwork, suffix=""::Abstract
     nq = length(dcf.quartet)
     expCF = SharedArray{Float64, 2}(nq,3)
     # careful ordering: ["t","t_0"] ordered differently after we add suffix "_1"
-    taxa = PhyloNetworks.sort_stringasinteger!(tipLabels(net) .* suffix) # same as done in countquartetsintrees
+    taxa = PN.sort_stringasinteger!(tipLabels(net) .* suffix) # same as done in countquartetsintrees
     nsuff = length(suffix)
     taxonnumber = Dict(chop(taxa[i];tail=nsuff) => i for i in eachindex(taxa))
     ntax = length(taxa)
-    nCk = PhyloNetworks.nchoose1234(ntax) # matrix used to ranks 4-taxon sets
+    nCk = PN.nchoose1234(ntax) # matrix used to ranks 4-taxon sets
     nq == nCk[ntax+1,4] || error("dcf is assumed to contain ALL $(nCk[ntax+1,4]) four-taxon sets, but contains $nq only.")
     ptype = Vector{Int8}(undef,4) # permutation vector to sort the 4 taxa
     resperm = Vector{Int8}(undef,3) # permutation to sort the 3 resolutions accordingly
     for q in dcf.quartet
         tn = map(i->taxonnumber[i], q.taxon)
         sortperm!(ptype, tn)
-        qi = PhyloNetworks.quartetrank(tn[ptype]..., nCk)
+        qi = PN.quartetrank(tn[ptype]..., nCk)
         # next: find the corresponding permutation of the 3 CFs.
         # this permutation is invariant to permuting ptype like: [a b c d] -> [c d a b] or [b a d c]
         # modify ptype to have 1 first, then only 6 permutations, corresponding to 6 permutations of 3 resolutions
