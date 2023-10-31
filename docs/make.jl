@@ -1,4 +1,4 @@
-using Documenter, DocumenterMarkdown
+using Documenter
 using PhyloNetworks
 using QuartetNetworkGoodnessFit
 DocMeta.setdocmeta!(QuartetNetworkGoodnessFit, :DocTestSetup, :(using QuartetNetworkGoodnessFit); recursive=true)
