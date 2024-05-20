@@ -67,15 +67,17 @@ Note that `net` is **not** modified.
 - `quartetstat`: the test statistic used to obtain an outlier p-value for
   each four-taxon set, which is then compared to a chi-squared distribution
   with 2 degrees of freedom to get a p-value.
-  The default is `:LRT` for the likelihood ratio:
-  ``2n_\mathrm{genes} \sum_{j=1}^3 {\hat p}_j (\log{\hat p}_j - \log p_j)`` where ``p_j``
-  is the quartet CF expected from the network, and ``{\hat p}_j`` is the
-  quartet CF observed in the data.  
-  Alternatives are `:Qlog` for the Qlog statistics (Lorenzen, 1995):
-  ``2n_\mathrm{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2}{p_j (\log{\hat p}_j - \log p_j)}``  
-  and `:pearson` for Pearon's chi-squared statistic, which behaves poorly when
-  the expected count is low (e.g. less than 5):
-  ``n_\mathrm{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2 }{p_j}``
+  * `:LRT` is the default, for the likelihood ratio:
+    ``2n_\mathrm{genes} \sum_{j=1}^3 {\hat p}_j (\log{\hat p}_j - \log p_j)``
+    where ``p_j``
+    is the quartet CF expected from the network, and ``{\hat p}_j`` is the
+    quartet CF observed in the data.
+  * `:Qlog` for the Qlog statistics (Lorenzen, 1995):
+    ``2n_\mathrm{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2}{p_j (\log{\hat p}_j - \log p_j)}``
+    and
+  * `:pearson` for Pearon's chi-squared statistic, which behaves poorly when
+    one or more expected counts are low (e.g. less than 5):
+    ``n_\mathrm{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2 }{p_j}``
 - `correction=:simulation` to correct for dependence across 4-taxon.
   Use `:none` to turn off simulations and the correction for dependence.
 - `seed=1234`: master seed to control the seeds for gene tree simulations.
