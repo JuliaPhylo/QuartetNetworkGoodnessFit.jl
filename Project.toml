@@ -1,7 +1,7 @@
 name = "QuartetNetworkGoodnessFit"
 uuid = "1382f7fc-2744-4d9d-8ec6-1e3efdec0746"
 authors = ["Cecile Ane <cecileane@users.noreply.github.com>"]
-version = "0.5.0"
+version = "0.5.1"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
