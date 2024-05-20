@@ -17,7 +17,7 @@
 
 ## what to update
 
-- check Julia version in `.github/workflows/ci.yml`, docs section
+- check Julia version in `.github/workflows/documentation.yml`
 - update Documenter version in `docs/Project.toml`, and fix
   anything that the update might have broken.
 
