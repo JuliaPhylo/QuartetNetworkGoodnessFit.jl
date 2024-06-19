@@ -6,7 +6,7 @@ The correction for dependence across 4-taxon uses a simulation approach.
 We provide more examples here to simulate gene trees and extract the
 quartet concordance factors observed in these simulated gene trees.
 
-We use [PhyloCoalSimulations](https://cecileane.github.io/PhyloCoalSimulations.jl/stable/)
+We use [PhyloCoalSimulations](https://JuliaPhylo.github.io/PhyloCoalSimulations.jl/stable/)
 for the simulation of trees under the network multispecies coalescent,
 assuming that the network edges lengths are in coalescent units.
 

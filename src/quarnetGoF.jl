@@ -32,7 +32,7 @@ across 4-taxon sets: it makes no correction for dependence.
 To correct for dependence with `correction=:simulation`, the distribution of
 z-values is obtained by simulating gene trees under the coalescent along the
 network (after branch length optimization if `optbl=true`)
-using [PhyloCoalSimulations](https://github.com/cecileane/PhyloCoalSimulations.jl).
+using [PhyloCoalSimulations](https://github.com/JuliaPhylo/PhyloCoalSimulations.jl).
 The z-score is calculated on each simulated data set.
 Under independence, these z-scores have mean 0 and variance 1.
 Under dependence, these z-scores still have mean 0, but an inflated variance.
@@ -54,7 +54,7 @@ Note that `net` is **not** modified.
   in coalescent units.
   When `optbl=true`, branch lengths in `net` are optimized, to optimize the
   pseudo log likelihood score as in SNaQ (see
-  [here](https://crsl4.github.io/PhyloNetworks.jl/stable/lib/public/#PhyloNetworks.topologyMaxQPseudolik!)).
+  [here](https://JuliaPhylo.github.io/PhyloNetworks.jl/stable/lib/public/#PhyloNetworks.topologyMaxQPseudolik!)).
   In both cases, any missing branch length is assigned a value with
   [`ultrametrize!`](@ref), which attempts to make the major tree ultrametric
   (but never modifies an existing edge length).
@@ -194,7 +194,7 @@ end
                               seed::Int, nsim::Int, verbose::Bool, keepfiles::Bool)
 
 Simulate gene trees under the multispecies coalescent model along network `net`
-using [PhyloCoalSimulations](https://github.com/cecileane/PhyloCoalSimulations.jl).
+using [PhyloCoalSimulations](https://github.com/JuliaPhylo/PhyloCoalSimulations.jl).
 The quartet concordance factors (CFs) from these simulated gene trees are used
 as input to `outlierp_fun!` to categorize each 4-taxon set as an outlier
 (p-value < 0.05) or not.
