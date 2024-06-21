@@ -1,7 +1,7 @@
 # notes to maintain documentation
 
 - built with [Documenter](https://juliadocs.github.io/Documenter.jl)
-- deployed [here](https://cecileane.github.io/QuartetNetworkGoodnessFit.jl/dev/)
+- deployed [here](https://JuliaPhylo.github.io/QuartetNetworkGoodnessFit.jl/dev/)
   (go to `dev/` or `stable/`)
   using github and files committed to the `gh-pages` branch.
 

@@ -1,12 +1,12 @@
 # Quarnet GoF --or simply QGoF
 
 QuartetNetworkGoodnessFit.jl is a Julia
-[package](https://github.com/cecileane/QuartetNetworkGoodnessFit.jl)
+[package](https://github.com/JuliaPhylo/QuartetNetworkGoodnessFit.jl)
 for phylogenetic networks analyses using four-taxon subsets.
 It includes tools
 to measure the goodness of fit
 of a candidate network to data on subsets of 4 tips.
-It depends on the [PhyloNetworks](https://github.com/crsl4/PhyloNetworks.jl)
+It depends on the [PhyloNetworks](https://github.com/JuliaPhylo/PhyloNetworks.jl)
 package.
 
 For a tutorial, see the manual:

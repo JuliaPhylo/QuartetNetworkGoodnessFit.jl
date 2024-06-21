@@ -9,7 +9,7 @@ makedocs(
     authors = "Cécile Ané and Ruoyi Cai",
     format = Documenter.HTML(;
         prettyurls = get(ENV, "CI", nothing) == "true", # easier local build
-        canonical="https://cecileane.github.io/QuartetNetworkGoodnessFit.jl/stable/",
+        canonical="https://JuliaPhylo.github.io/QuartetNetworkGoodnessFit.jl/stable/",
         edit_link="master",
         assets=String[]
     ),
@@ -28,7 +28,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/cecileane/QuartetNetworkGoodnessFit.jl.git",
+    repo = "github.com/JuliaPhylo/QuartetNetworkGoodnessFit.jl.git",
     push_preview = true,
     devbranch="master",
 )
