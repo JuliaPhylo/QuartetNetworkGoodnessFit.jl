@@ -31,7 +31,7 @@ where `r` is the input inheritance correlation.
 julia> using PhyloNetworks, QuartetNetworkGoodnessFit
 
 julia> # network with 3_2 cycles, causing some anomalous quartets
-       net = readTopology("(D:1,((C:1,#H25:0):0.1,((((B1:10,B2:1):1.5,#H1:0):10.8,((A1:1,A2:1):0.001)#H1:0::0.5):0.5)#H25:0::0.501):1);");
+       net = readnewick("(D:1,((C:1,#H25:0):0.1,((((B1:10,B2:1):1.5,#H1:0):10.8,((A1:1,A2:1):0.001)#H1:0::0.5):0.5)#H25:0::0.501):1);");
 
 julia> # using PhyloPlots; plot(net, showedgelength=true);
 
@@ -68,13 +68,13 @@ B1,B2,C,D: [1.0, 9.42e-7, 9.42e-7]
 """
 function network_expectedCF(net::HybridNetwork; showprogressbar=true,
             inheritancecorrelation=0)
-    net.node[net.root].leaf && error("The root can't be a leaf.")
+    getroot(net).leaf && error("The root can't be a leaf.")
     PN.check_nonmissing_nonnegative_edgelengths(net,
         "Edge lengths are needed in coalescent units to calcualte expected CFs.")
     all(e.gamma >= 0.0 for e in net.edge) || error("some γ's are missing for hybrid edges: can't calculate expected CFs.")
     inheritancecorrelation >= 0 || error("the inheritance correlation should be non-negative")
     inheritancecorrelation <= 1 || error("the inheritance correlation should be <= 1")
-    taxa = sort!(tipLabels(net))
+    taxa = sort!(tiplabels(net))
     taxonnumber = Dict(taxa[i] => i for i in eachindex(taxa))
     ntax = length(taxa)
     nCk = PN.nchoose1234(ntax) # matrix to rank 4-taxon sets
@@ -171,11 +171,11 @@ Its value should be between 0 and 1 (not checked by this internal function).
 function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorrelation)
     deleteaboveLSA!(net)
     # make sure the root is of degree 3+
-    if length(net.node[net.root].edge) <= 2
+    if length(getroot(net).edge) <= 2
         PN.fuseedgesat!(net.root, net)
     end
     # find and delete degree-2 blobs along external edges
-    bcc = biconnectedComponents(net, true) # true: ignore trivial blobs
+    bcc = biconnectedcomponents(net, true) # true: ignore trivial blobs
     entry = PN.biconnectedcomponent_entrynodes(net, bcc)
     entryindex = indexin(entry, net.nodes_changed)
     exitnodes = PN.biconnectedcomponent_exitnodes(net, bcc, false) # don't redo the preordering
@@ -189,7 +189,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
     for ib in reverse(bloborder)
         isexternal(ib) || continue # keep bcc[ib] if not external of degree 2
         for he in bcc[ib]
-            he.isMajor && continue
+            he.ismajor && continue
             # deletion of a hybrid can hide the deletion of another: check that he is still in net
             any(e -> e===he, net.edge) || continue
             # delete minor hybrid edge with options unroot=true: to make sure the
@@ -222,7 +222,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
         internallength = 0.0 # correct if polytomy
         for e in cutpool
             internallength += e.length
-            hwc = hardwiredCluster(e, fourtaxa)
+            hwc = hardwiredcluster(e, fourtaxa)
             sistertofirst = findnext(x -> x == hwc[1], hwc, 2)
         end
         minorcf = exp(-internallength)/3
@@ -258,7 +258,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
     # weighted qCFs average of 3 networks: 2 displayed, 1 "parental" (unless same parents)
     sameparents = (inheritancecorrelation == 1)
     oneminusrho = 1 - inheritancecorrelation
-    hwc = hardwiredCluster(parenthedge[1], fourtaxa)
+    hwc = hardwiredcluster(parenthedge[1], fourtaxa)
     sistertofirst = findnext(x -> x == hwc[1], hwc, 2)
     internallength = ( ispolytomy ? 0.0 : funneledge[1].length)
     deepcoalprob = exp(-internallength)
@@ -297,7 +297,7 @@ function network_expectedCF_4taxa!(net::HybridNetwork, fourtaxa, inheritancecorr
             ce2 = simplernet.edge[ce2_index]
             PN.removeEdge!(hn,ce2)
             hn_index = findfirst(x -> x === hn, ce2.node)
-            ce2.node[hn_index] = pn # ce2.isChild1 remains synchronized
+            ce2.node[hn_index] = pn # ce2.ischild1 remains synchronized
             push!(pn.edge, ce2)
             # then delete hybedge j
             PN.deletehybridedge!(simplernet, pej,

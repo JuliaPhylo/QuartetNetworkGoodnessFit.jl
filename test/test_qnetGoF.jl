@@ -3,7 +3,7 @@
 df = DataFrame(CSV.File(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv")), copycols=false)
 d0 = readTableCF(df)
 d = deepcopy(d0)
-net3 = readTopology("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
+net3 = readnewick("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
 
 @testset "using Pearson statistic" begin
 # without optimizing branch lengths
@@ -79,7 +79,7 @@ Distributed.rmprocs(workers())
 
 # network that caused a bug in hybrid-Lambda v0.6.2-beta, see
 # https://github.com/hybridLambda/hybrid-Lambda/issues/36
-net = readTopology("(((A:7.13,(B:5.98)#H18:1.15::0.79):0.1,C:7.23):0.07,((D:0.0)#H19:6.2::0.89,(E:5.64,(O:0.0,#H19:0.0::0.11):5.64):0.56):1.1,#H18:1.32::0.21);")
+net = readnewick("(((A:7.13,(B:5.98)#H18:1.15::0.79):0.1,C:7.23):0.07,((D:0.0)#H19:6.2::0.89,(E:5.64,(O:0.0,#H19:0.0::0.11):5.64):0.56):1.1,#H18:1.32::0.21);")
 @test_logs quarnetGoFtest!(net,d,false; seed=419, nsim=5);
 
 end

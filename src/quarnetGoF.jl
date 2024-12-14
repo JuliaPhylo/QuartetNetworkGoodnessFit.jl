@@ -228,7 +228,7 @@ function quarnetGoFtest_simulation(net::HybridNetwork, dcf::DataCF, outlierp_fun
         verbose && @info "starting replicate $irep"
         seed!(repseed[irep])
         treelist = simulatecoalescent(net, ngenes, 1)
-        keepfiles && writeMultiTopology(treelist, joinpath(genetreedir, "genetrees_rep$irep.trees"));
+        keepfiles && writemultinewick(treelist, joinpath(genetreedir, "genetrees_rep$irep.trees"));
         length(treelist) == ngenes || @warn "unexpected number of gene trees, file $gt" # sanity check
         obsCF, t = countquartetsintrees(treelist; showprogressbar=verbose)
         # on 1 replicate only, check that the taxa come in the correct order
@@ -276,7 +276,7 @@ function expectedCF_ordered(dcf::DataCF, net::HybridNetwork, suffix=""::Abstract
     nq = length(dcf.quartet)
     expCF = SharedArray{Float64, 2}(nq,3)
     # careful ordering: ["t","t_0"] ordered differently after we add suffix "_1"
-    taxa = PN.sort_stringasinteger!(tipLabels(net) .* suffix) # same as done in countquartetsintrees
+    taxa = PN.sort_stringasinteger!(tiplabels(net) .* suffix) # same as done in countquartetsintrees
     nsuff = length(suffix)
     taxonnumber = Dict(chop(taxa[i];tail=nsuff) => i for i in eachindex(taxa))
     ntax = length(taxa)

@@ -28,7 +28,7 @@ If a hybrid edge has a missing length, this length is changed as follows:
 """
 function ultrametrize!(net::HybridNetwork, verbose::Bool)
     ultrametric = true
-    directEdges!(net)
+    directedges!(net)
     preorder!(net) # creates / modified net.nodes_changed
     # first: calculate the distance from the root to each node, in dr
     dr = Vector{Float64}(undef, length(net.nodes_changed))
@@ -121,21 +121,21 @@ Candidate root positions are limited to internal nodes (excluding leaves)
 that are compatible with the direction of hybrid edges.
 """
 function reroot!(net, refnet)
-    root_saved = net.root # fall back in case none are admissible
+    root_saved = net.rooti # fall back in case none are admissible
     nnodes = length(net.node)
     bestdissimilarity = typemax(Int)
     besti = nothing
     for i in nnodes:-1:1
         net.node[i].leaf && continue
-        net.root = i
+        net.rooti = i
         try
-            directEdges!(net)
+            directedges!(net)
         catch e
             isa(e, PN.RootMismatch) || rethrow(e)
             continue
         end
         # now, i is admissible: internal and compatible with direction
-        diss = hardwiredClusterDistance(net, refnet, true) # rooted = true now
+        diss = hardwiredclusterdistance(net, refnet, true) # rooted = true now
         if diss < bestdissimilarity
             bestdissimilarity = diss
             besti = i
@@ -143,11 +143,11 @@ function reroot!(net, refnet)
         bestdissimilarity == 0 && break # cannot do better than 0!
     end
     if isnothing(besti) # all internal nodes conflicted with edge directions!
-        net.root = root_saved
-        try directEdges!(net); catch; end
+        net.rooti = root_saved
+        try directedges!(net); catch; end
     elseif bestdissimilarity > 0
-        net.root = besti
-        directEdges!(net)
+        net.rooti = besti
+        directedges!(net)
     end
     return bestdissimilarity
 end

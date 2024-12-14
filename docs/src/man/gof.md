@@ -25,8 +25,8 @@ and the other that has one reticulation (net1).
 
 ```@repl gof
 using PhyloNetworks
-net1 = readTopology("((((D,C),((A,B))#H1),(#H1,E)),O);");
-net0 = readTopology("((((D,C),(A,B)),E),O);"); # also: majorTree(net1)
+net1 = readnewick("((((D,C),((A,B))#H1),(#H1,E)),O);");
+net0 = readnewick("((((D,C),(A,B)),E),O);"); # also: majorTree(net1)
 ```
 
 `net0` has clades AB and CD sister to each other,
