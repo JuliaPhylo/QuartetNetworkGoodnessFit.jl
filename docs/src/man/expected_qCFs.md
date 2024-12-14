@@ -34,7 +34,7 @@ listed to the left.
 We can also convert our list to a data frame:
 ```@repl expcf
 using DataFrames
-df = writeTableCF(eCFs, t) # requires PhyloNetworks v0.16.1
+df = DataFrame(tablequartetCF(eCFs, t), copycols=false)
 ```
 
 If we wanted to compare with the observed frequency among 100 gene trees,
@@ -43,7 +43,8 @@ we could use data frame manipulations to join the two data frames:
 ```@repl expcf
 using PhyloCoalSimulations
 genetrees = simulatecoalescent(net, 100, 1); # 100 genes, 1 individual / pop
-df_sim = writeTableCF(countquartetsintrees(genetrees; showprogressbar=false)...);
+nt_sim = tablequartetCF(countquartetsintrees(genetrees; showprogressbar=false)...);
+df_sim = DataFrame(nt_sim, copycols=false)
 first(df_sim, 2)
 select!(df_sim, Not([:qind,:ngenes])); # delete columns with q index and number of genes
 df_both = outerjoin(select(df, Not(:qind)), df_sim;

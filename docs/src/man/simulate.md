@@ -16,7 +16,7 @@ net1 = readnewick("((((D:0.2,C:0.2):2.4,((A:0.4,B:0.4):1.1)#H1:1.1::0.7):2.0,(#H
 ngenes = 30
 genetrees = simulatecoalescent(net1, ngenes, 1); # 1 individual / species
 obsCF, t = countquartetsintrees(genetrees; showprogressbar=true);
-df = writeTableCF(obsCF, t)
+df = tablequartetCF(obsCF, t)
 ```
 
 ## using Hybrid-Lambda
@@ -56,5 +56,5 @@ net1 = readnewick("((((D:0.2,C:0.2):2.4,((A:0.4,B:0.4):1.1)#H1:1.1::0.7):2.0,(#H
 net1HL = hybridlambdaformat(net1) # format for the network, to use below by hybrid-lambda
 run(`$hl -spcu "((((D:0.2,C:0.2)I1:2.4,((A:0.4,B:0.4)I2:1.1)H1#0.7:1.1)I3:2.0,(H1#0.7:0.0,E:1.5)I4:3.1)I5:1.0,O:5.6)I6;" -num 200 -seed 123 -o "genetrees"`)
 treelist = readmultinewick("genetrees_coal_unit")
-obsCF = writeTableCF(countquartetsintrees(treelist)...)
+obsCF = tablequartetCF(countquartetsintrees(treelist)...)
 ```
