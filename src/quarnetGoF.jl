@@ -1,5 +1,7 @@
 @doc raw"""
-    quarnetGoFtest!(net::HybridNetwork, df::DataFrame, optbl::Bool; quartetstat=:LRT, correction=:simulation, seed=1234, nsim=1000, verbose=false, keepfiles=false)
+    quarnetGoFtest!(net::HybridNetwork, df::DataFrame, optbl::Bool;
+        quartetstat=:LRT, correction=:simulation, seed=1234, nsim=1000,
+        verbose=false, keepfiles=false)
     quarnetGoFtest!(net::HybridNetwork, dcf::DataCF,   optbl::Bool; kwargs...)
 
 Goodness-of-fit test for the adequacy of the multispecies network coalescent,
@@ -54,7 +56,7 @@ Note that `net` is **not** modified.
   in coalescent units.
   When `optbl=true`, branch lengths in `net` are optimized, to optimize the
   pseudo log likelihood score as in SNaQ (see
-  [here](https://JuliaPhylo.github.io/PhyloNetworks.jl/stable/lib/public/#PhyloNetworks.topologyMaxQPseudolik!)).
+  [here](https://juliaphylo.github.io/SNaQ.jl/stable/lib/public/#SNaQ.topologymaxQpseudolik!-Tuple{HybridNetwork,%20DataCF})).
   In both cases, any missing branch length is assigned a value with
   [`ultrametrize!`](@ref), which attempts to make the major tree ultrametric
   (but never modifies an existing edge length).
@@ -78,7 +80,7 @@ Note that `net` is **not** modified.
   * `:pearson` for Pearon's chi-squared statistic, which behaves poorly when
     one or more expected counts are low (e.g. less than 5):
     ``n_\mathrm{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2 }{p_j}``
-- `correction=:simulation` to correct for dependence across 4-taxon.
+- `correction=:simulation` to correct for dependence across 4-taxon sets.
   Use `:none` to turn off simulations and the correction for dependence.
 - `seed=1234`: master seed to control the seeds for gene tree simulations.
 - `nsim=1000`: number of simulated data sets. Each data set is simulated to have the
@@ -97,8 +99,10 @@ Note that `net` is **not** modified.
 3. estimated σ for the test statistic used for the correction (1.0 if no correction)
 4. a vector of outlier p-values, one for each four-taxon set
 5. network (first and second versions):
-   `net` with loglik field updated if `optbl` is false;
-    copy of `net` with optimized branch lengths and loglik if `optbl` is true
+   `net` with `net.fscore` updated to contain the quartet CF score
+   (pseudo log-likelihood up to a constant) if `optbl` is false;
+    copy of `net` with optimized branch lengths and quartet CF score stored in
+    `net.fscore` if `optbl` is true
 6. in case `correction = :simulation`, vector of simulated z values
    (`nothing` if `correction = :none`). These z-values could be used to
    calculate an empirical p-value (instead of the p-value in #1), as the
@@ -116,32 +120,45 @@ Note that `net` is **not** modified.
   Statistics & Probability Letters, 25(4):301-307.
   doi: [10.1016/0167-7152(94)00234-8](https://doi.org/10.1016/0167-7152(94)00234-8)
 """
-function quarnetGoFtest!(net::HybridNetwork,  df::DataFrame, optbl::Bool; kwargs...)
-    d = readTableCF(df);
+function quarnetGoFtest!(
+    net::HybridNetwork,
+    df::DataFrame,
+    optbl::Bool;
+    kwargs...
+)
+    d = readtableCF(df);
     res = quarnetGoFtest!(net, d, optbl; kwargs...);
     df[!,:p_value] .= res[4] # order in "res": overallpval, uncorrected z-value, sigma, pval, ...
     return res
 end
 
-function quarnetGoFtest!(net::HybridNetwork, dcf::DataCF, optbl::Bool;
-                         quartetstat::Symbol=:LRT, correction::Symbol=:simulation,
-                         seed=1234::Int, nsim=1000::Int, verbose=false::Bool, keepfiles=false::Bool)
+function quarnetGoFtest!(
+    net::HybridNetwork,
+    dcf::DataCF,
+    optbl::Bool;
+    quartetstat::Symbol=:LRT,
+    correction::Symbol=:simulation,
+    seed::Int=1234,
+    nsim::Int=1000,
+    verbose::Bool=false,
+    keepfiles::Bool=false
+)
     correction in [:simulation, :none] || error("correction ($correction) must be one of :none or :simulation")
     quartetstat in [:LRT, :Qlog, :pearson] || error("$quartetstat is not a valid quartetstat option")
     if optbl
         net_saved = net
         # default tolerance values are too lenient
-        net = topologyMaxQPseudolik!(net,dcf, ftolRel=1e-12, ftolAbs=1e-10, xtolRel=1e-10, xtolAbs=1e-10)
+        net = topologymaxQpseudolik!(net,dcf, ftolRel=1e-12, ftolAbs=1e-10, xtolRel=1e-10, xtolAbs=1e-10)
         reroot!(net, net_saved) # restore the root where it was earlier
     else
         net = deepcopy(net) # because we may assign values to missing branch lengths
     end
-    # below: to update expected CFs. not quite done by topologyMaxQPseudolik!
-    topologyQPseudolik!(net,dcf)
+    # below: to update expected CFs. not quite done by topologymaxQpseudolik!
+    topologyQpseudolik!(net,dcf)
     # assign values to missing branch lengths
-    # hybrid-lambda required a time-consistent and ultrametric network...
-    # PhyloCoalSimulations.simulatecoalescent still requires no missing edge length.
-    ultrametrize!(net, false) # verbose=false bc ultrametricity & time-consistency are allowed with PhyloCoalSimulations
+    # hybrid-lambda required a time-consistent and ultrametric network.
+    # PhyloCoalSimulations allows non-ultrametric and time-inconsistent nets
+    ultrametrize!(net, false) # verbose=false
     outlierp_fun! = ( quartetstat ==  :LRT ? multinom_lrt! :
                      (quartetstat == :Qlog ? multinom_qlog! : multinom_pearson!))
     gof_zval, outlierpvals = quarnetGoFtest(dcf.quartet, outlierp_fun!)
@@ -228,7 +245,7 @@ function quarnetGoFtest_simulation(net::HybridNetwork, dcf::DataCF, outlierp_fun
         verbose && @info "starting replicate $irep"
         seed!(repseed[irep])
         treelist = simulatecoalescent(net, ngenes, 1)
-        keepfiles && writeMultiTopology(treelist, joinpath(genetreedir, "genetrees_rep$irep.trees"));
+        keepfiles && writemultinewick(treelist, joinpath(genetreedir, "genetrees_rep$irep.trees"));
         length(treelist) == ngenes || @warn "unexpected number of gene trees, file $gt" # sanity check
         obsCF, t = countquartetsintrees(treelist; showprogressbar=verbose)
         # on 1 replicate only, check that the taxa come in the correct order
@@ -276,7 +293,7 @@ function expectedCF_ordered(dcf::DataCF, net::HybridNetwork, suffix=""::Abstract
     nq = length(dcf.quartet)
     expCF = SharedArray{Float64, 2}(nq,3)
     # careful ordering: ["t","t_0"] ordered differently after we add suffix "_1"
-    taxa = PN.sort_stringasinteger!(tipLabels(net) .* suffix) # same as done in countquartetsintrees
+    taxa = PN.sort_stringasinteger!(tiplabels(net) .* suffix) # same as done in countquartetsintrees
     nsuff = length(suffix)
     taxonnumber = Dict(chop(taxa[i];tail=nsuff) => i for i in eachindex(taxa))
     ntax = length(taxa)

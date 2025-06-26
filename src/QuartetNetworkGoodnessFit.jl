@@ -6,6 +6,7 @@ using NLopt
 using PhyloCoalSimulations: simulatecoalescent
 using PhyloNetworks
 using Random: seed!
+using SNaQ
 using SharedArrays
 using SpecialFunctions: loggamma
 using StaticArrays

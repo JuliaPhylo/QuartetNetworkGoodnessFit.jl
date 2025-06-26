@@ -1,9 +1,9 @@
 @testset "testing GoF, multinomial distribution" begin
 
 df = DataFrame(CSV.File(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv")), copycols=false)
-d0 = readTableCF(df)
+d0 = readtableCF(df)
 d = deepcopy(d0)
-net3 = readTopology("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
+net3 = readnewick("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
 
 @testset "using Pearson statistic" begin
 # without optimizing branch lengths
@@ -14,7 +14,7 @@ netresult1 = quarnetGoFtest!(net3,df,false; quartetstat=:pearson, correction=:no
 @test netresult1[2] ≈ 8.589058727506838  # z stat
 @test netresult1[1] ≈ 4.384234705965304e-18   # p-value
 @test df[!,:p_value] ≈ [1.2435633419824544e-11,0.0009280577186649157,0.0009280577186649157,1.2435633419824544e-11,0.007580817260552542,0.9998389684303506,0.012895416058219087,0.9438090044657973,0.9471103615208266,0.9438090044657973,0.012895416058219087,0.9471103615208266,0.9956830628718893,0.24055486863965628,0.007580817260552542]
-@test netresult1[5].loglik ≈ 105.30058282649648
+@test netresult1[5].fscore ≈ 105.30058282649648
 end
 
 @testset "LRT statistic for 4-taxon set with small expected values" begin
@@ -79,7 +79,7 @@ Distributed.rmprocs(workers())
 
 # network that caused a bug in hybrid-Lambda v0.6.2-beta, see
 # https://github.com/hybridLambda/hybrid-Lambda/issues/36
-net = readTopology("(((A:7.13,(B:5.98)#H18:1.15::0.79):0.1,C:7.23):0.07,((D:0.0)#H19:6.2::0.89,(E:5.64,(O:0.0,#H19:0.0::0.11):5.64):0.56):1.1,#H18:1.32::0.21);")
+net = readnewick("(((A:7.13,(B:5.98)#H18:1.15::0.79):0.1,C:7.23):0.07,((D:0.0)#H19:6.2::0.89,(E:5.64,(O:0.0,#H19:0.0::0.11):5.64):0.56):1.1,#H18:1.32::0.21);")
 @test_logs quarnetGoFtest!(net,d,false; seed=419, nsim=5);
 
 end

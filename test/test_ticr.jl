@@ -2,11 +2,11 @@
 # previously in PhyloNetworks
 
 df = DataFrame(CSV.File(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv")), copycols=false);
-d = readTableCF(df);
+d = readtableCF(df);
 
 @testset "ticr! on data frame, tree" begin
-net1 = readTopology("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
-setGamma!(net1.edge[9],0.0);
+net1 = readnewick("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
+setgamma!(net1.edge[9],0.0);
 net2 = deepcopy(net1);
 # without optimizing branch lengthes
 result1 = ticr!(net1,df,false);
@@ -17,7 +17,7 @@ result1 = ticr!(net1,df,false);
 @test result1[4][1] ≈ 10.576940922426542713 atol=1e-5 # alpha obtained from R
 #with optimizing branch lengthes
 result2 = ticr!(net2,d,true);
-net2_1 = readTopology("(D,C,(((A,B):1.297)#H1:1.412::1.0,((#H1:0.0::0.0,E):6.877,O):1.354):9.352);");
+net2_1 = readnewick("(D,C,(((A,B):1.297)#H1:1.412::1.0,((#H1:0.0::0.0,E):6.877,O):1.354):9.352);");
 result3 = ticr!(net2_1,d,false);
 @test result3[2] ≈ 1.480872194397731   # z statistic, from R, same as above
 @test result3[1] ≈ 0.06932031690660927 # p-value, from R
@@ -33,7 +33,7 @@ result3_1 = ticr!(net2_1,d,false; test=:goodness);
 end
 
 @testset "ticr! on data frame, network, p value from maximum observed values, dirichlet distribution" begin
-net3 = readTopology("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
+net3 = readnewick("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
 # without optimizing branch lengths
 netresult1 = ticr!(net3,d,false);
 @test netresult1[2] ≈ -0.8885233166386386  # z stat, from R: prop.test(0,15, p=0.05, alternative="greater", correct=F)
@@ -44,7 +44,7 @@ netresult1 = ticr!(net3,d,false);
 end
 
 @testset "ticr! on data frame, network, minimum pvalue, dirichlet distribution" begin
-net3 = readTopology("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
+net3 = readnewick("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");
 # without optimizing branch lengths
 netresult1 = ticr!(net3,d,false; quartetstat=:minpval);
 @test netresult1[2] ≈ 8.589058727506838  # z stat
