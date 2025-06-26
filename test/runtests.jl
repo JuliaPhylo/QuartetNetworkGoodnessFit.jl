@@ -1,6 +1,7 @@
 using QuartetNetworkGoodnessFit
 using DataFrames, CSV
 using PhyloNetworks
+using SNaQ: readtableCF
 using Test
 using Distributed
 

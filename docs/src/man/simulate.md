@@ -31,30 +31,32 @@ shown below using [hybrid-Lambda](https://github.com/hybridLambda/hybrid-Lambda)
 which comes with version v0.3 of `QuartetNetworkGoodnessFit`
 but not with later versions.
 
-In the code below, we show how to call hybrid-lambda within julia,
-asking for the simulation of 200 genes (`-num 200`).
+In the code below, we call hybrid-lambda within julia to simulate 200 genes
+(`-num 200`).
 The major issue that this code solves is that hybrid-lambda does not
-use the standard extended Newick format, but we show code to generate
-the format expected by hybrid-lambda, from the standard format.
+use the standard extended Newick format. We show how to convert the standard
+Newick format to that expected by hybrid-lambda.
 
-Note that hybrid-lambda assumes that the tree or network
-is ultrametric, but runs even if this assumption is not met.
+Hybrid-lambda assumes that the species phylogeny is ultrametric, but runs even
+if this assumption is not met.
 
-If you required QuartetNetworkGoodnessFit v0.3, then do this:
+Install hybrid-lambda, the define a variable `hl` as a string that
+gives the path to the Hybrid-Lambda executable on your local machine.
+Back when using QuartetNetworkGoodnessFit v0.3, it was done like this:
 ```julia simulate
 hl = QuartetNetworkGoodnessFit.hybridlambda # path to hybrid-lambda simulator, on local machine
 ```
-otherwise, install Hybrid-Lambda separately, then define `hl` as a string that
-gives the path to the Hybrid-Lambda executable on your local machine.
-Below, we use Julia to convert the standard Newick network into the format
-used by Hybrid-Lambda, run it, read the gene trees from the file created by
-Hybrid-Lambda, and finally calculate quartet concordance factors from these
-gene trees.
+
+Next: define a species network, and run the simulation.
 
 ```julia simulate
 net1 = readnewick("((((D:0.2,C:0.2):2.4,((A:0.4,B:0.4):1.1)#H1:1.1::0.7):2.0,(#H1:0.0::0.3,E:1.5):3.1):1.0,O:5.6);");
-net1HL = hybridlambdaformat(net1) # format for the network, to use below by hybrid-lambda
+# convert standard Newick network into the format for hybrid-lambda, used next
+net1HL = hybridlambdaformat(net1)
+# run hybrid-lambda:
 run(`$hl -spcu "((((D:0.2,C:0.2)I1:2.4,((A:0.4,B:0.4)I2:1.1)H1#0.7:1.1)I3:2.0,(H1#0.7:0.0,E:1.5)I4:3.1)I5:1.0,O:5.6)I6;" -num 200 -seed 123 -o "genetrees"`)
+# read gene trees from the file created by hybrid-lambda:
 treelist = readmultinewick("genetrees_coal_unit")
+# calculate quartet concordance factors from these gene trees:
 obsCF = tablequartetCF(countquartetsintrees(treelist)...)
 ```

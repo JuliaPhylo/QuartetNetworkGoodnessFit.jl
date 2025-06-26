@@ -54,7 +54,7 @@ Note that `net` is **not** modified.
   in coalescent units.
   When `optbl=true`, branch lengths in `net` are optimized, to optimize the
   pseudo log likelihood score as in SNaQ (see
-  [here](https://JuliaPhylo.github.io/PhyloNetworks.jl/stable/lib/public/#PhyloNetworks.topologyMaxQPseudolik!)).
+  [here](https://juliaphylo.github.io/SNaQ.jl/stable/lib/public/#SNaQ.topologymaxQpseudolik!-Tuple{HybridNetwork,%20DataCF})).
   In both cases, any missing branch length is assigned a value with
   [`ultrametrize!`](@ref), which attempts to make the major tree ultrametric
   (but never modifies an existing edge length).
@@ -97,8 +97,10 @@ Note that `net` is **not** modified.
 3. estimated σ for the test statistic used for the correction (1.0 if no correction)
 4. a vector of outlier p-values, one for each four-taxon set
 5. network (first and second versions):
-   `net` with loglik field updated if `optbl` is false;
-    copy of `net` with optimized branch lengths and loglik if `optbl` is true
+   `net` with `net.fscore` updated to contain the quartet CF score
+   (pseudo log-likelihood up to a constant) if `optbl` is false;
+    copy of `net` with optimized branch lengths and quartet CF score stored in
+    `net.fscore` if `optbl` is true
 6. in case `correction = :simulation`, vector of simulated z values
    (`nothing` if `correction = :none`). These z-values could be used to
    calculate an empirical p-value (instead of the p-value in #1), as the
@@ -117,7 +119,7 @@ Note that `net` is **not** modified.
   doi: [10.1016/0167-7152(94)00234-8](https://doi.org/10.1016/0167-7152(94)00234-8)
 """
 function quarnetGoFtest!(net::HybridNetwork,  df::DataFrame, optbl::Bool; kwargs...)
-    d = readTableCF(df);
+    d = readtableCF(df);
     res = quarnetGoFtest!(net, d, optbl; kwargs...);
     df[!,:p_value] .= res[4] # order in "res": overallpval, uncorrected z-value, sigma, pval, ...
     return res
@@ -131,17 +133,17 @@ function quarnetGoFtest!(net::HybridNetwork, dcf::DataCF, optbl::Bool;
     if optbl
         net_saved = net
         # default tolerance values are too lenient
-        net = topologyMaxQPseudolik!(net,dcf, ftolRel=1e-12, ftolAbs=1e-10, xtolRel=1e-10, xtolAbs=1e-10)
+        net = topologymaxQpseudolik!(net,dcf, ftolRel=1e-12, ftolAbs=1e-10, xtolRel=1e-10, xtolAbs=1e-10)
         reroot!(net, net_saved) # restore the root where it was earlier
     else
         net = deepcopy(net) # because we may assign values to missing branch lengths
     end
-    # below: to update expected CFs. not quite done by topologyMaxQPseudolik!
-    topologyQPseudolik!(net,dcf)
+    # below: to update expected CFs. not quite done by topologymaxQpseudolik!
+    topologyQpseudolik!(net,dcf)
     # assign values to missing branch lengths
-    # hybrid-lambda required a time-consistent and ultrametric network...
-    # PhyloCoalSimulations.simulatecoalescent still requires no missing edge length.
-    ultrametrize!(net, false) # verbose=false bc ultrametricity & time-consistency are allowed with PhyloCoalSimulations
+    # hybrid-lambda required a time-consistent and ultrametric network.
+    # PhyloCoalSimulations allows non-ultrametric and time-inconsistent nets
+    ultrametrize!(net, false) # verbose=false
     outlierp_fun! = ( quartetstat ==  :LRT ? multinom_lrt! :
                      (quartetstat == :Qlog ? multinom_qlog! : multinom_pearson!))
     gof_zval, outlierpvals = quarnetGoFtest(dcf.quartet, outlierp_fun!)

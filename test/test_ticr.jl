@@ -2,7 +2,7 @@
 # previously in PhyloNetworks
 
 df = DataFrame(CSV.File(joinpath(dirname(Base.find_package("PhyloNetworks")),"..","examples","buckyCF.csv")), copycols=false);
-d = readTableCF(df);
+d = readtableCF(df);
 
 @testset "ticr! on data frame, tree" begin
 net1 = readnewick("((((D:0.4,C:0.4):4.8,((A:0.8,B:0.8):2.2)#H1:2.2::0.7):4.0,(#H1:0::0.3,E:3.0):6.2):2.0,O:11.2);");

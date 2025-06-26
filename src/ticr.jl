@@ -39,9 +39,10 @@ to test for any kind of departure from the expected frequencies
 
 # arguments
 
-- `optbl`: when `false`, the loglik field of `net` is updated but branch lengths are
+- `optbl`: when `false`, `net.fscore` is updated with the network's quartet CF
+  score (pseudo log-likelihood up to a constant) but branch lengths are
   taken as is. When `true`, a copy of `net` is used to conduce the test,
-  with updated branch lengths (in coalescent units) and updated loglik.
+  with updated branch lengths (in coalescent units) and updated score.
   This network is returned.
 - `quartetstat = :maxCF`: test statistic used to obtain an outlier
   p-value for each four-taxon set. By default, it is the absolute difference
@@ -66,8 +67,10 @@ to test for any kind of departure from the expected frequencies
    - value of the pseudo likelihood (optimized at α)
 5. a vector of outlier p-values, one for each four-taxon set
 6. network (first and second versions):
-   `net` with loglik field updated if `optbl` is false;
-    copy of `net` with optimized branch lengths and loglik if `optbl` is true
+   `net` with field `net.fscore` updated to contain the quartet CF score
+   (pseudo log-likelihood up to a constant) if `optbl` is false;
+    copy of `net` with optimized branch lengths and quartet CF score stored in
+    `net.fscore` if `optbl` is true
 
 # references
 
@@ -81,7 +84,7 @@ see also this [addendum](http://www.stat.wisc.edu/~ane/publis/2015Stenz_TICR_add
 """
 function ticr!(net::HybridNetwork, df::DataFrame, optbl::Bool;
                quartetstat::Symbol=:maxCF, test::Symbol=:onesided)
-    d = readTableCF(df);
+    d = readtableCF(df);
     res = ticr!(net, d, optbl; quartetstat=quartetstat, test=test); # order of value in results "res":
     df.p_value = res[5]             # overallpval, teststat, counts, alpha_pseudolik, pval, net
     return res
@@ -89,9 +92,9 @@ end
 
 function ticr!(net::HybridNetwork, dcf::DataCF, optbl::Bool; quartetstat::Symbol=:maxCF, test::Symbol=:onesided)
     if optbl
-        net = topologyMaxQPseudolik!(net,dcf);
+        net = topologymaxQpseudolik!(net,dcf);
     else
-        topologyQPseudolik!(net,dcf);
+        topologyQpseudolik!(net,dcf);
     end
     res = ticr(dcf, quartetstat, test);
     return (res..., net) # (overallpval, teststat, counts, alpha_pseudolik, pval, net)
@@ -206,13 +209,13 @@ end
 """
     ticr_optimalpha(dcf::DataCF)
 
-Find the concentration parameter α by maximizing the pseudo-log-likelihood
+Find the concentration parameter α by maximizing the pseudo log-likelihood
 of observed quartet concordance factors.
 The model assumes a Dirichlet distribution with mean equal to the expected
 concordance factors calculated from a phylogenetic network (under ILS).
 These expected CFs are assumed to be already calculated, and stored in `dcf`.
 
-When calculating the pseudo-log-likelihood, this function checks the
+When calculating the pseudo log-likelihood, this function checks the
 observed concordance factors for any values equal to zero: they cause a problem
 because the Dirichlet density is 0 at 0 (for concentration α > 1).
 Those 0.0 observed CF values are re-set to the minimum of:
@@ -220,8 +223,8 @@ Those 0.0 observed CF values are re-set to the minimum of:
 - the minimum of all nonzero observed concordance factors.
 
 # output
-- maximized pseudo-loglikelihood
-- value of α where the pseudo-loglikelihood is maximized
+- maximized pseudo log-likelihood (up to a constant)
+- value of α where the pseudo log-likelihood is maximized
 - return code of the optimization
 
 The optimization uses NLOpt, with the `:LN_BOBYQA` method.

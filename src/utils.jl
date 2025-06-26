@@ -29,15 +29,15 @@ If a hybrid edge has a missing length, this length is changed as follows:
 function ultrametrize!(net::HybridNetwork, verbose::Bool)
     ultrametric = true
     directedges!(net)
-    preorder!(net) # creates / modified net.nodes_changed
+    preorder!(net) # creates / modified net.vec_node
     # first: calculate the distance from the root to each node, in dr
-    dr = Vector{Float64}(undef, length(net.nodes_changed))
+    dr = Vector{Float64}(undef, length(net.vec_node))
     dr[1] = 0.0 # root
-    for i in 2:length(net.nodes_changed) # pre-order
-        @inbounds n = net.nodes_changed[i]
+    for i in 2:length(net.vec_node) # pre-order
+        @inbounds n = net.vec_node[i]
         e = getparentedge(n)
         p = getparent(e)
-        pi = findfirst(x -> x===p, net.nodes_changed)
+        pi = findfirst(x -> x===p, net.vec_node)
         drmaj = dr[pi]    # distance to root of major parent
         if !n.hybrid # n is a tree node. only 1 parent edge: e
             dr[i] = drmaj + max(e.length, 0.0) # interpret missing as zero
@@ -49,7 +49,7 @@ function ultrametrize!(net::HybridNetwork, verbose::Bool)
         # now: n is a hybrid node, with parent edges e and emin
         emin = getparentedgeminor(n)
         pmin = getparent(emin)
-        pmini = findfirst(x -> x===pmin, net.nodes_changed)
+        pmini = findfirst(x -> x===pmin, net.vec_node)
         drmin = dr[pmini] # distance to root of minor parent
         majmissing = e.length == -1.0
         minmissing = emin.length == -1.0
@@ -98,8 +98,8 @@ function ultrametrize!(net::HybridNetwork, verbose::Bool)
     end
     height = maximum(dr) # max distance from root to tip: will be tree height
     # adjust external branch lengths
-    for i in 2:length(net.nodes_changed)
-        @inbounds n = net.nodes_changed[i]
+    for i in 2:length(net.vec_node)
+        @inbounds n = net.vec_node[i]
         n.leaf || continue
         e = getparentedge(n)
         if e.length == -1.0
