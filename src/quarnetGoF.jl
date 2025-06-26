@@ -1,5 +1,7 @@
 @doc raw"""
-    quarnetGoFtest!(net::HybridNetwork, df::DataFrame, optbl::Bool; quartetstat=:LRT, correction=:simulation, seed=1234, nsim=1000, verbose=false, keepfiles=false)
+    quarnetGoFtest!(net::HybridNetwork, df::DataFrame, optbl::Bool;
+        quartetstat=:LRT, correction=:simulation, seed=1234, nsim=1000,
+        verbose=false, keepfiles=false)
     quarnetGoFtest!(net::HybridNetwork, dcf::DataCF,   optbl::Bool; kwargs...)
 
 Goodness-of-fit test for the adequacy of the multispecies network coalescent,
@@ -78,7 +80,7 @@ Note that `net` is **not** modified.
   * `:pearson` for Pearon's chi-squared statistic, which behaves poorly when
     one or more expected counts are low (e.g. less than 5):
     ``n_\mathrm{genes} \sum_{j=1}^3 \frac{({\hat p}_j - p_j)^2 }{p_j}``
-- `correction=:simulation` to correct for dependence across 4-taxon.
+- `correction=:simulation` to correct for dependence across 4-taxon sets.
   Use `:none` to turn off simulations and the correction for dependence.
 - `seed=1234`: master seed to control the seeds for gene tree simulations.
 - `nsim=1000`: number of simulated data sets. Each data set is simulated to have the
@@ -118,16 +120,29 @@ Note that `net` is **not** modified.
   Statistics & Probability Letters, 25(4):301-307.
   doi: [10.1016/0167-7152(94)00234-8](https://doi.org/10.1016/0167-7152(94)00234-8)
 """
-function quarnetGoFtest!(net::HybridNetwork,  df::DataFrame, optbl::Bool; kwargs...)
+function quarnetGoFtest!(
+    net::HybridNetwork,
+    df::DataFrame,
+    optbl::Bool;
+    kwargs...
+)
     d = readtableCF(df);
     res = quarnetGoFtest!(net, d, optbl; kwargs...);
     df[!,:p_value] .= res[4] # order in "res": overallpval, uncorrected z-value, sigma, pval, ...
     return res
 end
 
-function quarnetGoFtest!(net::HybridNetwork, dcf::DataCF, optbl::Bool;
-                         quartetstat::Symbol=:LRT, correction::Symbol=:simulation,
-                         seed=1234::Int, nsim=1000::Int, verbose=false::Bool, keepfiles=false::Bool)
+function quarnetGoFtest!(
+    net::HybridNetwork,
+    dcf::DataCF,
+    optbl::Bool;
+    quartetstat::Symbol=:LRT,
+    correction::Symbol=:simulation,
+    seed::Int=1234,
+    nsim::Int=1000,
+    verbose::Bool=false,
+    keepfiles::Bool=false
+)
     correction in [:simulation, :none] || error("correction ($correction) must be one of :none or :simulation")
     quartetstat in [:LRT, :Qlog, :pearson] || error("$quartetstat is not a valid quartetstat option")
     if optbl

@@ -116,8 +116,8 @@ end
     reroot!(net, refnet)
 
 Reroot `net` to minimize the hardwired cluster distance between
-the `net` (with the new root position) and the reference network `refnet`.
-Candidate root positions are limited to internal nodes (excluding leaves)
+`net` (with the new root position) and the reference network `refnet`.
+Candidate root positions are limited to non-leaf nodes
 that are compatible with the direction of hybrid edges.
 """
 function reroot!(net, refnet)

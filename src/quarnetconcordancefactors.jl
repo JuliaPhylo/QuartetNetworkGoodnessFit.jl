@@ -3,7 +3,10 @@
             inheritancecorrelation=0)
 
 Calculate the quartet concordance factors (qCF) expected from the multispecies
-coalescent along network `net`. Output: `(q,t)` where `t` is a list of taxa,
+coalescent along network `net`, using the recursive algorithm by
+[Ané et al. (2024)](https://doi.org/10.1007/s00285-024-02050-7).
+
+Output: `(q,t)` where `t` is a list of taxa,
 and `q` is a list of 4-taxon set objects of type `PhyloNetworks.QuartetT{datatype}`.
 In each element of `q`, `taxonnumber` gives the indices in `taxa`
 of the 4 taxa of interest; and `data` contains the 3 concordance factors, for the
@@ -19,19 +22,28 @@ By default, lineages at a hybrid node come from a parent (chosen according
 to inheritance probabilities γ) *independently* across lineages.
 With option `inheritancecorrelation > 0`, lineages have positive dependence,
 e.g. to model locus-specific inheritance probabilities, randomly drawn from a
-Beta distribution with mean γ across all loci. If `inheritancecorrelation` is
+Beta distribution with mean γ across all loci
+(see [Fogg, Allman & Ané 2023](https://doi.org/10.1093/sysbio/syad030)).
+If `inheritancecorrelation` is
 set to 1, then all lineages at a given locus inherit from the same
 (randomly sampled) parent. More generally, the lineages' parents
 are distributed according to a Dirichlet process with base distribution determined
 by the γ values, and with concentration parameter α = (1-r)/r, that is, r = 1/(1+α),
 where `r` is the input inheritance correlation.
 
-# examples
+# example
+
+Below we use a network with two "3₂" cycles, causing some quartets to
+be anomalous (see [Ané et al. 2024](https://doi.org/10.1007/s00285-024-02050-7)),
+in the sense that the unrooted tree topology displayed in the network, for
+example A1,A2|B1,C has a lower frequency among gene trees than another topology
+not even displayed in the network.
+This is due to incomplete lineage sorting interacting with gene flow.
+
 ```jldoctest
 julia> using PhyloNetworks, QuartetNetworkGoodnessFit
 
-julia> # network with 3_2 cycles, causing some anomalous quartets
-       net = readnewick("(D:1,((C:1,#H25:0):0.1,((((B1:10,B2:1):1.5,#H1:0):10.8,
+julia> net = readnewick("(D:1,((C:1,#H25:0):0.1,((((B1:10,B2:1):1.5,#H1:0):10.8,
                 ((A1:1,A2:1):0.001)#H1:0::0.5):0.5)#H25:0::0.501):1);");
 
 julia> # using PhyloPlots; plot(net, showedgelength=true);
@@ -127,7 +139,8 @@ end
             inheritancecorrelation)
 
 Update `quartet.data` to contain the quartet concordance factors expected from
-the multispecies coalescent along network `net` for the 4-taxon set `taxa[quartet.taxonnumber]`.
+the multispecies coalescent along network `net` for the 4-taxon set
+`taxa[quartet.taxonnumber]`.
 `taxa` should contain the tip labels in `net`. `quartet.taxonnumber` gives the
 indices in `taxa` of the 4 taxa of interest. `taxonnumber` should be a dictionary
 mapping taxon labels in to their indices in `taxa`, for easier lookup.

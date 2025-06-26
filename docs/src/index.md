@@ -31,8 +31,11 @@ References:
   An example using the inbreeding plant species *Arabidopsis thaliana* (L.) Heynh. [Systematic Biology](https://doi.org/10.1093/sysbio/syv039), 64(5):809-823.
 - [Addendum](http://www.stat.wisc.edu/~ane/publis/2015Stenz_TICR_addendum.pdf)
   describing a modification to the model in the original TICR test.
-- for the simulation software:\
-  John Fogg, Elizabeth S. Allman, and Cécile Ané (2023). PhyloCoalSimulations: A simulator for network multispecies coalescent models, including a new extension for the inheritance of gene flow.
+- for the simulation software and the coalescent model with correlated
+  inheritance (e.g. from locus-specific gene flow probabilities):\
+  John Fogg, Elizabeth S. Allman, and Cécile Ané (2023).
+  PhyloCoalSimulations: A simulator for network multispecies coalescent models,
+  including a new extension for the inheritance of gene flow.
   [Systematic Biology](https://doi.org/10.1093/sysbio/syad030),
   72(5):1171–1179.
 - for the algorithm to get quartet concordance factors expected from a network:\

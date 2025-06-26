@@ -13,8 +13,9 @@ proportion of genes estimated to have each 4-taxon unrooted topology.
 
 ```@repl gof
 using QuartetNetworkGoodnessFit, DataFrames, CSV
-qCF = DataFrame(CSV.File(joinpath(dirname(pathof(QuartetNetworkGoodnessFit)), "..","test","example_qCF_5taxa.csv")), copycols=false);
-qCF
+cffile = joinpath(dirname(pathof(QuartetNetworkGoodnessFit)), "..",
+    "test","example_qCF_5taxa.csv");
+qCF = CSV.read(cffile, DataFrame)
 ```
 
 ## testing candidate networks
@@ -23,10 +24,11 @@ Let's say we have two candidate networks to test:
 one that is just a tree (net0),
 and the other that has one reticulation (net1).
 
-```@repl gof
+```@example gof
 using PhyloNetworks
 net1 = readnewick("((((D,C),((A,B))#H1),(#H1,E)),O);");
-net0 = readnewick("((((D,C),(A,B)),E),O);"); # also: majorTree(net1)
+net0 = readnewick("((((D,C),(A,B)),E),O);"); # also: majortree(net1)
+nothing # hide
 ```
 
 `net0` has clades AB and CD sister to each other,
