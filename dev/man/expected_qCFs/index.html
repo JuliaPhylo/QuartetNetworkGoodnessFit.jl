@@ -52,42 +52,42 @@ B1,B2,C,D: [1.0, 9.422e-7, 9.422e-7]</code></pre><p>For each 4-taxon set above, 
 <span class="sgr1"> Row </span>│<span class="sgr1"> qind   t1      t2      t3      t4      CF12_34  CF13_24  CF14_23  ngenes  </span>
      │<span class="sgr90"> Int64  String  String  String  String  Float64  Float64  Float64  Float64 </span>
 ─────┼───────────────────────────────────────────────────────────────────────────
-   1 │     1  A1      A2      B1      B2         0.88     0.02     0.1     100.0
-   2 │     2  A1      A2      B1      C          0.18     0.39     0.43    100.0
-   3 │     3  A1      A2      B2      C          0.18     0.4      0.42    100.0
-   4 │     4  A1      B1      B2      C          0.03     0.06     0.91    100.0
-   5 │     5  A2      B1      B2      C          0.06     0.03     0.91    100.0
-   6 │     6  A1      A2      B1      D          0.18     0.38     0.44    100.0
-   7 │     7  A1      A2      B2      D          0.18     0.39     0.43    100.0
-   8 │     8  A1      B1      B2      D          0.03     0.06     0.91    100.0
-   9 │     9  A2      B1      B2      D          0.06     0.03     0.91    100.0
-  10 │    10  A1      A2      C       D          0.7      0.14     0.16    100.0
-  11 │    11  A1      B1      C       D          0.77     0.08     0.15    100.0
-  12 │    12  A2      B1      C       D          0.84     0.06     0.1     100.0
-  13 │    13  A1      B2      C       D          0.77     0.08     0.15    100.0
-  14 │    14  A2      B2      C       D          0.84     0.06     0.1     100.0
+   1 │     1  A1      A2      B1      B2         0.88     0.05     0.07    100.0
+   2 │     2  A1      A2      B1      C          0.16     0.43     0.41    100.0
+   3 │     3  A1      A2      B2      C          0.17     0.44     0.39    100.0
+   4 │     4  A1      B1      B2      C          0.05     0.05     0.9     100.0
+   5 │     5  A2      B1      B2      C          0.03     0.01     0.96    100.0
+   6 │     6  A1      A2      B1      D          0.17     0.43     0.4     100.0
+   7 │     7  A1      A2      B2      D          0.18     0.44     0.38    100.0
+   8 │     8  A1      B1      B2      D          0.05     0.05     0.9     100.0
+   9 │     9  A2      B1      B2      D          0.03     0.01     0.96    100.0
+  10 │    10  A1      A2      C       D          0.64     0.24     0.12    100.0
+  11 │    11  A1      B1      C       D          0.74     0.18     0.08    100.0
+  12 │    12  A2      B1      C       D          0.75     0.12     0.13    100.0
+  13 │    13  A1      B2      C       D          0.74     0.18     0.08    100.0
+  14 │    14  A2      B2      C       D          0.75     0.12     0.13    100.0
   15 │    15  B1      B2      C       D          1.0      0.0      0.0     100.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; first(df_sim, 2)</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr1">2×9 DataFrame</span>
 <span class="sgr1"> Row </span>│<span class="sgr1"> qind   t1      t2      t3      t4      CF12_34  CF13_24  CF14_23  ngenes  </span>
      │<span class="sgr90"> Int64  String  String  String  String  Float64  Float64  Float64  Float64 </span>
 ─────┼───────────────────────────────────────────────────────────────────────────
-   1 │     1  A1      A2      B1      B2         0.88     0.02     0.1     100.0
-   2 │     2  A1      A2      B1      C          0.18     0.39     0.43    100.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; select!(df_sim, Not([:qind,:ngenes])); # delete columns with q index &amp; # genes</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df_both = outerjoin(select(df, Not(:qind)), df_sim;
+   1 │     1  A1      A2      B1      B2         0.88     0.05     0.07    100.0
+   2 │     2  A1      A2      B1      C          0.16     0.43     0.41    100.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; select!(df_sim, Not([:qind,:ngenes])); # delete columns with q index &amp; # genes</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df_both = outerjoin(select(df, Not(:qind)), df_sim;
                on=[:t1,:t2,:t3,:t4], renamecols = &quot;exact&quot; =&gt; &quot;sim&quot;)</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr1">15×10 DataFrame</span>
 <span class="sgr1"> Row </span>│<span class="sgr1"> t1      t2      t3      t4      CF12_34exact  CF13_24exact  CF14_23exact  CF12_34sim  CF13_24sim  CF14_23sim </span>
      │<span class="sgr90"> String  String  String  String  Float64?      Float64?      Float64?      Float64?    Float64?    Float64?   </span>
 ─────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────────
-   1 │ A1      A2      B1      B2         0.888546     0.0557272     0.0557272         0.88        0.02        0.1
-   2 │ A1      A2      B1      C          0.167503     0.416249      0.416249          0.18        0.39        0.43
-   3 │ A1      A2      B2      C          0.167503     0.416249      0.416249          0.18        0.4         0.42
-   4 │ A1      B1      B2      C          0.0371891    0.0371891     0.925622          0.03        0.06        0.91
-   5 │ A2      B1      B2      C          0.0371891    0.0371891     0.925622          0.06        0.03        0.91
-   6 │ A1      A2      B1      D          0.167503     0.416249      0.416249          0.18        0.38        0.44
-   7 │ A1      A2      B2      D          0.167503     0.416249      0.416249          0.18        0.39        0.43
-   8 │ A1      B1      B2      D          0.0371891    0.0371891     0.925622          0.03        0.06        0.91
-   9 │ A2      B1      B2      D          0.0371891    0.0371891     0.925622          0.06        0.03        0.91
-  10 │ A1      A2      C       D          0.689828     0.155086      0.155086          0.7         0.14        0.16
-  11 │ A1      B1      C       D          0.793009     0.103496      0.103496          0.77        0.08        0.15
-  12 │ A2      B1      C       D          0.793009     0.103496      0.103496          0.84        0.06        0.1
-  13 │ A1      B2      C       D          0.793009     0.103496      0.103496          0.77        0.08        0.15
-  14 │ A2      B2      C       D          0.793009     0.103496      0.103496          0.84        0.06        0.1
-  15 │ B1      B2      C       D          0.999998     9.42151e-7    9.42151e-7        1.0         0.0         0.0</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../simulate/">« simulating quartet concordance factors</a><a class="docs-footer-nextpage" href="../../lib/public/">public »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.13.0 on <span class="colophon-date" title="Thursday 26 June 2025 17:28">Thursday 26 June 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+   1 │ A1      A2      B1      B2         0.888546     0.0557272     0.0557272         0.88        0.05        0.07
+   2 │ A1      A2      B1      C          0.167503     0.416249      0.416249          0.16        0.43        0.41
+   3 │ A1      A2      B2      C          0.167503     0.416249      0.416249          0.17        0.44        0.39
+   4 │ A1      B1      B2      C          0.0371891    0.0371891     0.925622          0.05        0.05        0.9
+   5 │ A2      B1      B2      C          0.0371891    0.0371891     0.925622          0.03        0.01        0.96
+   6 │ A1      A2      B1      D          0.167503     0.416249      0.416249          0.17        0.43        0.4
+   7 │ A1      A2      B2      D          0.167503     0.416249      0.416249          0.18        0.44        0.38
+   8 │ A1      B1      B2      D          0.0371891    0.0371891     0.925622          0.05        0.05        0.9
+   9 │ A2      B1      B2      D          0.0371891    0.0371891     0.925622          0.03        0.01        0.96
+  10 │ A1      A2      C       D          0.689828     0.155086      0.155086          0.64        0.24        0.12
+  11 │ A1      B1      C       D          0.793009     0.103496      0.103496          0.74        0.18        0.08
+  12 │ A2      B1      C       D          0.793009     0.103496      0.103496          0.75        0.12        0.13
+  13 │ A1      B2      C       D          0.793009     0.103496      0.103496          0.74        0.18        0.08
+  14 │ A2      B2      C       D          0.793009     0.103496      0.103496          0.75        0.12        0.13
+  15 │ B1      B2      C       D          0.999998     9.42151e-7    9.42151e-7        1.0         0.0         0.0</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../simulate/">« simulating quartet concordance factors</a><a class="docs-footer-nextpage" href="../../lib/public/">public »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Tuesday 12 August 2025 12:45">Tuesday 12 August 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
