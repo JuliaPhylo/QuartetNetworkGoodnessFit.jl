@@ -205,30 +205,7 @@ function network_expectedCF_4taxa!(
     if length(getroot(net).edge) <= 2
         PN.fuseedgesat!(net.rooti, net)
     end
-    # find and delete degree-2 blobs along external edges
-    bcc = biconnectedcomponents(net, true) # true: ignore trivial blobs
-    entry = PN.biconnectedcomponent_entrynodes(net, bcc)
-    entryindex = indexin(entry, net.vec_node)
-    exitnodes = PN.biconnectedcomponent_exitnodes(net, bcc, false) # don't redo the preordering
-    bloborder = sortperm(entryindex) # pre-ordering for blobs in their own blob tree
-    function isexternal(ib) # is bcc[ib] of degree 2 and adjacent to an external edge?
-        # yes if: 1 single exit adjacent to a leaf
-        length(exitnodes[ib]) != 1 && return false
-        ch = getchildren(exitnodes[ib][1])
-        return length(ch) == 1 && ch[1].leaf
-    end
-    for ib in reverse(bloborder)
-        isexternal(ib) || continue # keep bcc[ib] if not external of degree 2
-        for he in bcc[ib]
-            he.ismajor && continue
-            # deletion of a hybrid can hide the deletion of another: check that he is still in net
-            any(e -> e===he, net.edge) || continue
-            # delete minor hybrid edge with options unroot=true: to make sure the
-            # root remains of degree 3+, in case a degree-2 blob starts at the root
-            # simplify=true: bc external blob
-            PN.deletehybridedge!(net,he, false,true,false,true,false)
-        end
-    end
+    PN.deleteexternal2blobs!(net) # requires PN v1.3
     ndes = 4 # number of taxa descendant from lowest hybrid node
     if net.numhybrids > 0
         preorder!(net)
