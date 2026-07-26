@@ -44,7 +44,7 @@ end
 d = deepcopy(d0)
 @testset "with dependence correction" begin
 # test of expectedCF_ordered
-for i in 1:15 d.quartet[i].qnet.expCF = [i+0.1, i+0.2, i+0.3]; end
+for i in 1:15 d.quartet[i].expCF = [i+0.1, i+0.2, i+0.3]; end
 expCF, taxa = QuartetNetworkGoodnessFit.expectedCF_ordered(d, net3)
 taxa == ["A","B","C","D","E","O"]
 expCF ≈ [13.1 13.2 13.3; 3.2 3.1 3.3; 2.2 2.1 2.3; 8.2 8.3 8.1; 10.3 10.2 10.1; 15.2 15.1 15.3; 5.2 5.1 5.3; 12.2 12.3 12.1; 9.3 9.2 9.1; 14.3 14.1 14.2; 4.1 4.3 4.2; 7.3 7.2 7.1; 1.1 1.3 1.2; 11.3 11.2 11.1; 6.1 6.2 6.3]

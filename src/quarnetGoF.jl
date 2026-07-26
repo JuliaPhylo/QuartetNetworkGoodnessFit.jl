@@ -56,7 +56,7 @@ Note that `net` is **not** modified.
   in coalescent units.
   When `optbl=true`, branch lengths in `net` are optimized, to optimize the
   pseudo log likelihood score as in SNaQ (see
-  [here](https://juliaphylo.github.io/SNaQ.jl/stable/lib/public/#SNaQ.topologymaxQpseudolik!-Tuple{HybridNetwork,%20DataCF})).
+  [here](https://juliaphylo.github.io/SNaQ.jl/stable/lib/public/#SNaQ.fitnumericalparameters!-Tuple{HybridNetwork,%20DataCF})).
   In both cases, any missing branch length is assigned a value with
   [`ultrametrize!`](@ref), which attempts to make the major tree ultrametric
   (but never modifies an existing edge length).
@@ -148,13 +148,13 @@ function quarnetGoFtest!(
     if optbl
         net_saved = net
         # default tolerance values are too lenient
-        net = topologymaxQpseudolik!(net,dcf, ftolRel=1e-12, ftolAbs=1e-10, xtolRel=1e-10, xtolAbs=1e-10)
+        net = fitnumericalparameters!(net,dcf, ftolRel=1e-12, ftolAbs=1e-10, xtolRel=1e-10, xtolAbs=1e-10)
         reroot!(net, net_saved) # restore the root where it was earlier
     else
         net = deepcopy(net) # because we may assign values to missing branch lengths
     end
-    # below: to update expected CFs. not quite done by topologymaxQpseudolik!
-    topologyQpseudolik!(net,dcf)
+    # below: to update expected CFs. not quite done by fitnumericalparameters!
+    computeSNaQscore!(net,dcf)
     # assign values to missing branch lengths
     # hybrid-lambda required a time-consistent and ultrametric network.
     # PhyloCoalSimulations allows non-ultrametric and time-inconsistent nets
@@ -222,7 +222,7 @@ of these z-values (assuming a mean of 0), and the z-values themselves are return
 Used by [`quarnetGoFtest!`](@ref).
 
 **Warning**: The quartet CFs expected from `net` are assumed to be stored in
-`dcf.quartet[i].qnet.expCF`. This is *not* checked.
+`dcf.quartet[i].expCF`. This is *not* checked.
 """
 function quarnetGoFtest_simulation(net::HybridNetwork, dcf::DataCF, outlierp_fun!::Function,
         seed::Int, nsim::Int, verbose::Bool, keepfiles::Bool)
@@ -233,7 +233,7 @@ function quarnetGoFtest_simulation(net::HybridNetwork, dcf::DataCF, outlierp_fun
     nq = length(dcf.quartet)
     pval = fill(-1.0, nq) # to be re-used across simulations, but NOT shared between processes
     sim_zval = SharedArray{Float64}(nsim) # to be shared between processes
-    # expected CFs: in dcf.quartet[i].qnet.expCF[j] for 4-taxon set i and resolution j
+    # expected CFs: in dcf.quartet[i].expCF[j] for 4-taxon set i and resolution j
     # BUT countquartetsintrees might list 4-taxon sets in a different order, and might list
     # the 4 taxa within a set in a different order -> need to re-order resolutions within a set
     # previously: suffix "_1" instead of "" because hybrid-Lambda adds suffix "_1" to all taxon names (if individual/tip)
@@ -282,7 +282,7 @@ Expected quartet concordance factors in `dcf`, but ordered as they would be if
 output by `PhyloNetworks.countquartetsintrees`.
 Output:
 - 2-dimentional `SharedArray` (number of 4-taxon sets x 3).
-  `dcf.quartet[i].qnet.expCF[j]` for 4-taxon set `i` and resolution `j`
+  `dcf.quartet[i].expCF[j]` for 4-taxon set `i` and resolution `j`
   is stored in row `qi` and column `k` if `qi` is the rank of 4-taxon set `i`
   (see `PhyloNetworks.quartetrank`). This rank depends on how taxa are ordered.
 - vector of taxon names, whose order matters. These are tip labels in `net` with
@@ -326,7 +326,7 @@ function expectedCF_ordered(dcf::DataCF, net::HybridNetwork, suffix=""::Abstract
             resperm[2] = ptype[2]
             resperm[3] = ptype[1]
         end
-        expCF[qi,:] = q.qnet.expCF[resperm]
+        expCF[qi,:] = q.expCF[resperm]
     end
     return expCF, taxa
 end
@@ -344,7 +344,7 @@ function multinom_pearson!(pval::AbstractVector{Float64}, quartet::Vector{Quarte
     for i in 1:nq
         qt = quartet[i]
         phat = qt.obsCF
-        p = qt.qnet.expCF
+        p = qt.expCF
         ngenes = qt.ngenes
         ipstat = ngenes * sum((phat .- p).^2 ./ p)
         pval[i] = chisqccdf(2, ipstat)
@@ -373,7 +373,7 @@ function multinom_qlog!(pval::AbstractVector{Float64}, quartet::Vector{Quartet})
     for i in 1:nq
         qt = quartet[i]
         phat = qt.obsCF
-        p = qt.qnet.expCF
+        p = qt.expCF
         ngenes = qt.ngenes
         mysum = 0.0
         for j in 1:3
@@ -413,7 +413,7 @@ function multinom_lrt!(pval::AbstractVector{Float64}, quartet::Vector{Quartet})
     for i in 1:nq
         qt = quartet[i]
         phat = qt.obsCF
-        p = qt.qnet.expCF
+        p = qt.expCF
         ngenes = qt.ngenes
         mysum = 0.0
         for j in 1:3

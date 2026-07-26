@@ -92,9 +92,9 @@ end
 
 function ticr!(net::HybridNetwork, dcf::DataCF, optbl::Bool; quartetstat::Symbol=:maxCF, test::Symbol=:onesided)
     if optbl
-        net = topologymaxQpseudolik!(net,dcf);
+        net = fitnumericalparameters!(net,dcf);
     else
-        topologyQpseudolik!(net,dcf);
+        computeSNaQscore!(net,dcf);
     end
     res = ticr(dcf, quartetstat, test);
     return (res..., net) # (overallpval, teststat, counts, alpha_pseudolik, pval, net)
@@ -154,10 +154,10 @@ function dirichlet_max(dcf::DataCF)
     pval = fill(-1.0,nq)
     for i in 1:nq
         phat = dcf.quartet[i].obsCF
-        p = dcf.quartet[i].qnet.expCF
+        p = dcf.quartet[i].expCF
         p_max, max_idx = findmax(p)
         p_max_hat = getindex(phat,max_idx)
-        p_sort = sort(dcf.quartet[i].qnet.expCF)
+        p_sort = sort(dcf.quartet[i].expCF)
         # abs(p_max-p_sort[end-1]) > 1e-6 || @warn "Check the network for major quartet"
         d = abs(p_max_hat - p_max)
         temp = [1-(1-p_max)*alpha/2, 0.0]
@@ -189,7 +189,7 @@ function dirichlet_min(dcf::DataCF)
     pval = fill(-1.0,nq)
     for i in 1:nq
         phat = dcf.quartet[i].obsCF
-        p = dcf.quartet[i].qnet.expCF
+        p = dcf.quartet[i].expCF
         subpval = fill(-1.0,3)
         for j in 1:3 # we now calculate a p-value for every CF
             p_max = p[j]
@@ -236,7 +236,7 @@ function ticr_optimalpha(dcf::DataCF; x_start::Float64=1.0,
         nloptmethod::Symbol=:LN_BOBYQA, xtol_rel::Float64=1e-6)
     m = dcf.numQuartets
     logcftilde = 0.0
-    minexpcf = minimum([minimum(q.qnet.expCF) for q in dcf.quartet])
+    minexpcf = minimum([minimum(q.expCF) for q in dcf.quartet])
     minnonzero_obscf = minimum([minimum(filter(!iszero,q.obsCF)) for q in dcf.quartet])
     minobscf = min(minexpcf,minnonzero_obscf)
     for q in dcf.quartet
@@ -244,7 +244,7 @@ function ticr_optimalpha(dcf::DataCF; x_start::Float64=1.0,
     end
     for i in 1:m
         lobscf = log.(dcf.quartet[i].obsCF)
-        p = dcf.quartet[i].qnet.expCF
+        p = dcf.quartet[i].expCF
         for i in 1:length(lobscf)
             logcftilde += lobscf[i]*p[i]
         end
@@ -255,7 +255,7 @@ function ticr_optimalpha(dcf::DataCF; x_start::Float64=1.0,
         logcfbar = 0.0
         for i in 1:m
             lobscf = log.(dcf.quartet[i].obsCF)
-            p = dcf.quartet[i].qnet.expCF
+            p = dcf.quartet[i].expCF
             p_min = minimum(p)
             if a >= 1.0/p_min
                 b = 0.0
